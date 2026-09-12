@@ -24,10 +24,6 @@ const ContactPage = lazy(() => import("./pages/ContactPage"));
 const Admin = lazy(() => import("./pages/Admin"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const AccessibilityStatement = lazy(() => import("./pages/AccessibilityStatement"));
-// Temporary: the light-ground comparison at /preview/grounds. Delete the route
-// and the page once a ground has been picked. Lazy, unlinked, and behind a
-// path nobody will guess, so it costs a real visitor nothing.
-const GroundPreview = lazy(() => import("./pages/GroundPreview"));
 
 /**
  * How much Lenis smooths the wheel, from 0 (never moves) to 1 (no smoothing).
@@ -91,7 +87,6 @@ function App() {
           <Route path="/admin" element={<Admin />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/accessibility-statement" element={<AccessibilityStatement />} />
-          <Route path="/preview/grounds" element={<GroundPreview />} />
         </Routes>
       </Suspense>
     </BrowserRouter>

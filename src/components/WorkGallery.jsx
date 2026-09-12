@@ -89,11 +89,6 @@ function SectionHeading() {
           Real jobs, photographed on site — long-run iron, flashings, capping and
           penetrations.
         </p>
-        {/* Visible placeholder marker, required while suburb-level locations
-            are unconfirmed. See content.js GALLERY + LAUNCH-BLOCKERS.md. */}
-        <p className="mt-3 inline-block border border-dashed border-white/25 px-2.5 py-1 font-mono text-[9px] tracking-[0.18em] text-white/40 uppercase">
-          Placeholder · suburb labels awaiting client confirmation
-        </p>
       </div>
     </div>
   );

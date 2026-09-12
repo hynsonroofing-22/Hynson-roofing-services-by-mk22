@@ -146,9 +146,19 @@ export const CHAPTERS = [
   },
 ];
 
-// The 6 real portfolio projects from the client's live site, with their
-// verbatim titles and descriptions (portfolio-collections pages). Real
-// full-resolution photos — see LAUNCH-BLOCKERS.md #3 re: photo permission.
+// The 6 portfolio projects from the client's live site, with their verbatim
+// titles and descriptions (portfolio-collections pages).
+//
+// Note for whoever picks this up: these six images look more like stock or
+// generated imagery than photographs of Hynson's own jobs — asphalt shingles
+// in four of six (a North American roof, and not on his service list), no New
+// Zealand anywhere in frame, and all six exactly 1024x1024. They came off his
+// own site, so he may well have bought them as fillers before he had photos of
+// his own, which is ordinary enough for a small business.
+//
+// The client has decided to keep them, which is his call to make. Logged in
+// LAUNCH-BLOCKERS.md #3a as a question to put to Eugene rather than a change
+// to make.
 export const PROJECTS = [
   {
     id: "residential-roof-replacement",
@@ -223,48 +233,56 @@ export const GALLERY = [
     id: "long-run-under-scaffold",
     image: "/img/proj-7144ddd464364bb0bdc922953adcba3d.webp",
     job: "Long-run iron, valley and ridge",
+    tag: "Re-roofing",
     suburb: null,
   },
   {
     id: "roof-vents",
     image: "/img/proj-88b691af2941477d98f4ebf6b6becbe8.webp",
     job: "Roof vents set into new long-run",
+    tag: "Re-roofing",
     suburb: null,
   },
   {
     id: "flue-flashing",
     image: "/img/proj-dd45718e0c904c18a490dbc15b729ba1.webp",
     job: "Flue penetration flashed and sealed",
+    tag: "Flashings",
     suburb: null,
   },
   {
     id: "sheets-laid",
     image: "/img/proj-8bdbe118b64d4bd39b8d17d036ad6070.webp",
     job: "Sheets laid out and fixed off",
+    tag: "Re-roofing",
     suburb: null,
   },
   {
     id: "hatch-flashing",
     image: "/img/proj-0b2e36224da04162a8bb6ff17f4b9ff7.webp",
     job: "Custom flashing over a roof hatch",
+    tag: "Flashings",
     suburb: null,
   },
   {
     id: "barge-capping",
     image: "/img/proj-b5516c29f9da4b9fa3279d6dfd5d1634.webp",
     job: "Barge capping along the roof edge",
+    tag: "Flashings",
     suburb: null,
   },
   {
     id: "ridge-capping",
     image: "/img/proj-788371d15a4d4ab5b7bb5d055761c519.webp",
     job: "Ridge capping run out straight",
+    tag: "Re-roofing",
     suburb: null,
   },
   {
     id: "commercial-long-run",
     image: "/img/proj-f8c1f1da08ca49afb0953d6fb1236537.webp",
     job: "Commercial long-run roof, finished",
+    tag: "Commercial",
     suburb: null,
   },
 ];

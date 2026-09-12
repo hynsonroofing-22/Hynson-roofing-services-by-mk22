@@ -1,5 +1,59 @@
 # What the best roofing sites have that we don't
 
+---
+
+## UPDATE — 2026-09-13
+
+Re-checked against solutionroofing.co.nz and the wider field. **Six of the
+items below have now been built**, and one gap has flipped the other way: we
+now have something none of them do.
+
+### We are now ahead on one thing, and it is worth leading with
+
+Solution Roofing's "instant estimator" — and every other one in the market —
+is a contact form with a progress bar. It asks for your details and emails
+you. It does not measure anything.
+
+Ours measures the roof. Three ways:
+
+1. **Address lookup** against the national property records (~120ms).
+2. **Trace it yourself on an aerial photograph** of your own house, using LINZ
+   imagery. The number becomes *yours* — you chose it, so you trust it, and if
+   the automatic lookup got it wrong you have already fixed it rather than
+   argued with it.
+3. **Describe the house** — bedrooms, storeys, era — for anyone who would
+   rather not do either.
+
+It then explains, from your own answers, exactly what will move your price.
+That is a genuinely better answer to "how much will this cost" than a per-m²
+range, and it is defensible without a single figure from Eugene.
+
+### Built since the last review
+
+- A page per service, and a services hub (was: one homepage list of twelve).
+- A "what happens when you call" timeline, on every service page.
+- Emergency roofing given its own page and its own path through the site.
+- The full gallery on its own page, filtered by the work shown.
+- A roof cost guide that answers the question honestly without a price.
+- Photo galleries per service, drawn from the verified job photographs.
+
+### Still ahead of us, and still blocked on Eugene
+
+In order of what would win him work. Every one needs a fact or a photo, not
+build time — see LAUNCH-BLOCKERS.md #3e.
+
+1. **A real Google rating and review count.** Still the single biggest gap.
+2. **Before-and-after sliders.** Deliberately not built: a slider with nothing
+   to show is worse than no slider. One "before" photo unlocks it.
+3. **Case studies with real suburbs.**
+4. **A credentials row** — licensing, insurance, memberships, guarantee.
+5. **Finance options.** Solution Roofing doesn't offer these either; no
+   evidence the market expects it. Not recommended.
+
+---
+
+## Original analysis (2026-09-09)
+
 Researched 2026-09-09 against **solutionroofing.co.nz** — the reference the
 client himself chose — plus the wider pattern across NZ roofing sites that rank
 and convert well.

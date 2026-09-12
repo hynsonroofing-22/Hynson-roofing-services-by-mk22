@@ -1,6 +1,27 @@
-import { Link } from "react-router-dom";
-import { ALL_SERVICES } from "../data/services";
+import { Check } from "lucide-react";
 import { usePrefersReducedMotion } from "../hooks/useMediaQuery";
+
+/**
+ * The four things worth saying about Hynson before anyone reads a word of the
+ * page. Every one is checkable in seconds and none needed confirming.
+ *
+ * These were briefly replaced with a scrolling list of the twelve services.
+ * That made the strip a navigation bar, which it is not — the services are
+ * already in the header dropdown and the footer, and a customer skimming past
+ * does not need a third copy. What they need at that moment is a reason to
+ * keep reading, which is what these four are.
+ *
+ * NOTE ON WHAT IS NOT HERE: no response time, no years trading, no rating, no
+ * guarantee. "Emergency roofing available" names the service; it deliberately
+ * does not promise a speed, because no speed has ever been confirmed.
+ */
+const TRUST_ITEMS = [
+  "Free, no-obligation quotes",
+  "Auckland owned & operated",
+  "Real photos, real jobs",
+  "Residential & commercial",
+  "Emergency roofing available",
+];
 
 /**
  * The banner strip.
@@ -38,65 +59,68 @@ import { usePrefersReducedMotion } from "../hooks/useMediaQuery";
  * who has asked for reduced motion gets a static, wrapped row instead of a
  * moving one — not a slower version of the same thing.
  */
+/** One line in the strip: a tick, the claim, and a travelling dot after it. */
+function Item({ text, delay }) {
+  return (
+    <span className="flex shrink-0 items-center">
+      <Check className="mr-2.5 h-3.5 w-3.5 shrink-0 text-accent" strokeWidth={3} aria-hidden="true" />
+      <span className="whitespace-nowrap font-mono text-xs font-semibold uppercase tracking-[0.16em] text-content">
+        {text}
+      </span>
+      <span
+        className="mx-8 h-1.5 w-1.5 shrink-0 rounded-full bg-accent animate-dot-pulse"
+        style={{ animationDelay: delay }}
+        aria-hidden="true"
+      />
+    </span>
+  );
+}
+
 export default function Marquee() {
   const reduceMotion = usePrefersReducedMotion();
 
-  // Two copies, so the -50% translate loops seamlessly.
-  const one = ALL_SERVICES;
-  const items = [...one, ...one];
-
   if (reduceMotion) {
-    // Static: the same content, wrapped, still clickable, no movement at all.
+    // Static: the same four claims, wrapped, no movement at all.
     return (
-      <div
-        className="border-y border-line bg-surface-sunken py-6"
-        data-testid="editorial-marquee"
-      >
-        <div className="mx-auto flex max-w-page flex-wrap items-center gap-x-7 gap-y-3 px-5 sm:px-8">
-          {one.map((s) => (
-            <Item key={s.name} s={s} />
+      <div className="border-y border-line bg-surface-sunken py-6" data-testid="editorial-marquee">
+        <ul className="mx-auto flex max-w-page flex-wrap items-center gap-x-8 gap-y-3 px-5 sm:px-8">
+          {TRUST_ITEMS.map((t) => (
+            <li
+              key={t}
+              className="flex items-center gap-2.5 font-mono text-xs font-semibold uppercase tracking-[0.16em] text-content"
+            >
+              <Check className="h-3.5 w-3.5 shrink-0 text-accent" strokeWidth={3} aria-hidden="true" />
+              {t}
+            </li>
           ))}
-        </div>
+        </ul>
       </div>
     );
   }
+
+  // Two copies, so the -50% translate loops seamlessly.
+  const items = [...TRUST_ITEMS, ...TRUST_ITEMS];
 
   return (
     <div
       className="group/strip overflow-hidden border-y border-line bg-surface-sunken py-6"
       data-testid="editorial-marquee"
-      // The list is duplicated for the loop, so a screen reader would read all
-      // twelve twice. It is announced once, as a plain list, from the static
-      // markup underneath.
-      aria-hidden="true"
     >
-      <div className="flex w-max animate-marquee items-center group-hover/strip:[animation-play-state:paused]">
-        {items.map((s, i) => (
-          <span key={`${s.name}-${i}`} className="flex items-center">
-            <Item s={s} />
-            {/* The marker. Its scale animation is staggered by index so the
-                dots are never all the same size at the same moment. */}
-            <span
-              className="mx-7 h-1.5 w-1.5 shrink-0 rounded-full bg-accent animate-dot-pulse"
-              style={{ animationDelay: `${(i % one.length) * 0.32}s` }}
-            />
-          </span>
+      {/* The visible, moving copy. Duplicated for the loop, so it is hidden
+          from screen readers and announced once from the list below. */}
+      <div
+        className="flex w-max animate-marquee items-center group-hover/strip:[animation-play-state:paused]"
+        aria-hidden="true"
+      >
+        {items.map((t, i) => (
+          <Item key={`${t}-${i}`} text={t} delay={`${(i % TRUST_ITEMS.length) * 0.36}s`} />
         ))}
       </div>
+      <ul className="sr-only">
+        {TRUST_ITEMS.map((t) => (
+          <li key={t}>{t}</li>
+        ))}
+      </ul>
     </div>
   );
-}
-
-/** One service in the strip — a link where it has a page, plain text where it doesn't. */
-function Item({ s }) {
-  const cls =
-    "whitespace-nowrap font-mono text-xs font-semibold uppercase tracking-[0.18em] transition-colors";
-  if (s.slug) {
-    return (
-      <Link to={`/services/${s.slug}`} className={`${cls} text-content hover:text-accent`}>
-        {s.name}
-      </Link>
-    );
-  }
-  return <span className={`${cls} text-content-muted`}>{s.name}</span>;
 }

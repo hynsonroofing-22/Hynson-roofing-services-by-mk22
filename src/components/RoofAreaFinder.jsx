@@ -296,6 +296,11 @@ export default function RoofAreaFinder({ pitch, onPick }) {
         status: "done",
         buildings: data.buildings,
         confidence: data.confidence,
+        // Kept so the map step can open on the right house rather than making
+        // someone find it from a view of the whole of Auckland.
+        lat: payload.lat ?? data.lat ?? null,
+        lon: payload.lon ?? data.lon ?? null,
+        label: payload.label || data.matched || null,
       });
     } catch (err) {
       console.error("[roof-area] lookup failed:", err);
@@ -317,7 +322,15 @@ export default function RoofAreaFinder({ pitch, onPick }) {
   useEffect(() => {
     if (state.status !== "done" || !state.buildings || !state.buildings.length) return;
     const b = state.buildings[0];
-    onPick(Math.round(b.footprint * factor), { footprint: b.footprint, factor, pitch });
+    onPick(Math.round(b.footprint * factor), {
+      footprint: b.footprint,
+      factor,
+      pitch,
+      lat: state.lat,
+      lon: state.lon,
+      label: state.label,
+      confidence: state.confidence,
+    });
     // Deliberately keyed on the result alone, not on `pitch` or `onPick`.
     // Changing the pitch afterwards is the calculator's business, and
     // re-firing here would fight the slider if the visitor has since moved it
@@ -326,7 +339,15 @@ export default function RoofAreaFinder({ pitch, onPick }) {
 
   const pickBuilding = (b, i) => {
     setChosen(i);
-    onPick(Math.round(b.footprint * factor), { footprint: b.footprint, factor, pitch });
+    onPick(Math.round(b.footprint * factor), {
+      footprint: b.footprint,
+      factor,
+      pitch,
+      lat: state.lat,
+      lon: state.lon,
+      label: state.label,
+      confidence: state.confidence,
+    });
   };
 
   const chooseSuggestion = (s) => {
@@ -424,7 +445,7 @@ export default function RoofAreaFinder({ pitch, onPick }) {
         Don't know your roof size?
       </p>
       <p className="mt-1.5 text-sm leading-relaxed text-zinc-400">
-        Start typing your address and we'll estimate it from building outline data.
+        Start typing and we'll work out how big your roof is.
       </p>
 
       <form onSubmit={onSubmit} className="relative mt-5 flex flex-col gap-2 sm:flex-row">
@@ -660,7 +681,7 @@ export default function RoofAreaFinder({ pitch, onPick }) {
 
           <p className="mt-4 flex items-start gap-2 text-xs leading-relaxed text-zinc-500">
             <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-            Estimated from building outline data — a site visit gives the real figure.
+            Measured from the national property records. A look at the roof gives the exact figure.
           </p>
         </motion.div>
       )}

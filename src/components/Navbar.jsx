@@ -1,12 +1,17 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
-import { Phone, Menu, X, ArrowUpRight, ChevronDown, Calculator, Moon, Sun, ClipboardCheck } from "lucide-react";
+import { Phone, Menu, X, ArrowUpRight, ChevronDown, Ruler, Moon, Sun, ClipboardCheck } from "lucide-react";
 import { PHONE_TEL, PHONE_DISPLAY } from "../data/content";
 import { SERVICE_NAV } from "../data/services";
 import useScrollLock from "../hooks/useScrollLock";
 import MockupBanner from "./MockupBanner";
+import Modal from "./Modal";
+
+// The roof tool is heavy (address lookup, and Leaflet if the map tab is
+// opened). It is only fetched when someone actually opens it.
+const QuoteCalculator = lazy(() => import("./QuoteCalculator"));
 
 const THEME_KEY = "hynson_theme";
 
@@ -106,6 +111,7 @@ export default function Navbar() {
     () => typeof document === "undefined" || document.documentElement.classList.contains("dark")
   );
   const [showFabs, setShowFabs] = useState(false);
+  const [toolOpen, setToolOpen] = useState(false);
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const onHome = pathname === "/";
@@ -125,18 +131,23 @@ export default function Navbar() {
   }, [menuOpen]);
 
   useEffect(() => {
-    // Floating quote/calculator buttons stay hidden until the hero is
-    // actually behind you. The mobile hero keeps its own two CTAs pinned to
-    // the bottom of the first screen, so anything earlier than ~a full
-    // viewport lands the FABs directly on top of them.
+    /**
+     * The floating buttons wait for the hero ONLY on the homepage.
+     *
+     * The homepage opens on a full-screen 3D build (or, on a phone, a photo
+     * hero with its own two CTAs pinned to the bottom), so anything floating
+     * there lands on top of them. Every other page opens on a heading and a
+     * breadcrumb — there is nothing to clear, and making someone scroll before
+     * the quote button appears is just hiding the quote button.
+     */
     const onScroll = () => {
       setScrolled(window.scrollY > 40);
-      setShowFabs(window.scrollY > window.innerHeight * 0.92);
+      setShowFabs(!onHome || window.scrollY > window.innerHeight * 0.92);
     };
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
-  }, []);
+  }, [onHome]);
 
   // Dark is the default. Only someone who has explicitly chosen light gets
   // light, so a first-time visitor opens on the dark site.
@@ -296,15 +307,18 @@ export default function Navbar() {
                 unfinished Tailwind class that generated nothing. Removed.
                 Dimensions are stated so the header doesn't reflow around the
                 logo as it decodes. */}
+            {/* The logo shrinks on a phone. At 375px the full-size mark plus
+                the wordmark plus the call and menu buttons did not fit, and
+                the wordmark was being clipped mid-word — "HYNSON ROOFIN". */}
             <img
               src="/brand/logo.png"
               alt="Hynson Roofing Services"
               width="56"
               height="56"
               decoding="async"
-              className="h-14 w-14 object-contain"
+              className="h-10 w-10 object-contain sm:h-14 sm:w-14"
             />
-            <span className="whitespace-nowrap font-display text-xl font-extrabold uppercase tracking-tight text-zinc-50">
+            <span className="whitespace-nowrap font-display text-base font-extrabold uppercase tracking-tight text-zinc-50 sm:text-xl">
               Hynson <span className="text-brand-ember">Roofing</span>
             </span>
           </Link>
@@ -483,42 +497,63 @@ export default function Navbar() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 16 }}
             transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed bottom-24 right-5 z-40 flex flex-col items-end gap-3 sm:bottom-28 sm:right-8"
+            className="fixed bottom-24 right-5 z-40 flex flex-col items-end gap-2.5 sm:bottom-28 sm:right-8"
           >
-            {/* Both of these used to open a modal on top of whatever you were
-                reading. They are links to real pages now — the estimator and
-                the enquiry form both have one, so the modal was an extra way
-                to see the same thing with no address you could share or come
-                back to. */}
-            <Link
-              to="/roof-cost"
-              className="btn-lift group flex items-center gap-3 border border-line-strong bg-surface py-3 pl-3 pr-3 shadow-card hover:border-accent sm:pr-5"
+            {/* Labelled, because an unexplained icon is a button nobody
+                presses. One short line each rather than the old two-line
+                stack, so they say what they do without becoming a slab of
+                button sitting on the page's right-hand column.
+
+                The roof tool opens OVER the page rather than navigating: the
+                header already has a Roof Cost link for the full page, so this
+                is the shortcut that lets you measure a roof without losing
+                your place. */}
+            <button
+              type="button"
+              onClick={() => setToolOpen(true)}
+              className="btn-lift flex items-center gap-2.5 border border-line-strong bg-surface py-2.5 pl-2.5 pr-4 shadow-card hover:border-accent"
               data-testid="fab-calculator"
             >
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center bg-accent/10 text-accent">
-                <Calculator className="h-4 w-4" />
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center bg-accent/10 text-accent">
+                <Ruler className="h-4 w-4" />
               </span>
-              <span className="hidden text-left sm:block">
-                <span className="block t-label text-content-faint">Free tool</span>
-                <span className="block font-display text-sm font-bold text-content">Cost estimate</span>
+              <span className="whitespace-nowrap font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-content">
+                Roof size tool
               </span>
-            </Link>
-            <Link
-              to="/contact"
-              className="btn-lift flex items-center gap-3 bg-accent py-3 pl-3 pr-3 text-accent-on shadow-card hover:bg-accent-hover sm:pr-5"
-              data-testid="fab-quote"
-            >
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center bg-white/15">
-                <ClipboardCheck className="h-4 w-4" />
-              </span>
-              <span className="hidden text-left sm:block">
-                <span className="block t-label text-white/70">Free quote</span>
-                <span className="block font-display text-sm font-bold">Get a quote</span>
-              </span>
-            </Link>
+            </button>
+            {pathname !== "/contact" && (
+              <Link
+                to="/contact"
+                className="btn-lift flex items-center gap-2.5 bg-accent py-2.5 pl-2.5 pr-4 text-accent-on shadow-card hover:bg-accent-hover"
+                data-testid="fab-quote"
+              >
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center bg-white/15">
+                  <ClipboardCheck className="h-4 w-4" />
+                </span>
+                <span className="whitespace-nowrap font-mono text-[11px] font-semibold uppercase tracking-[0.12em]">
+                  Get a free quote
+                </span>
+              </Link>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* The roof size tool, over the page.
+          Lazy: the estimator pulls in the address lookup and, if someone opens
+          the map tab, Leaflet. None of that should be in the first download
+          just because a button exists. */}
+      <Modal open={toolOpen} onClose={() => setToolOpen(false)} maxWidthClass="max-w-4xl">
+        <Suspense
+          fallback={
+            <div className="flex h-64 items-center justify-center bg-surface">
+              <span className="t-label text-content-faint">Loading…</span>
+            </div>
+          }
+        >
+          <QuoteCalculator compact />
+        </Suspense>
+      </Modal>
     </>
   );
 }

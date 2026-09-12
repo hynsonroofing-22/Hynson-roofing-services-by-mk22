@@ -1,505 +1,777 @@
-import { useState, useEffect, useCallback, useRef } from "react";
-import { Link } from "react-router-dom";
-import { motion, animate } from "framer-motion";
-import { ArrowLeft, ArrowRight, Calculator, AlertTriangle } from "lucide-react";
+import { useState, useEffect, useCallback, useRef, lazy, Suspense } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
+import {
+  ArrowLeft,
+  ArrowRight,
+  ArrowUpRight,
+  MapPin,
+  PencilRuler,
+  Home,
+  Check,
+  Ruler,
+  Loader2,
+} from "lucide-react";
 import { scrollToHash } from "./Navbar";
-import RoofAreaFinder from "./RoofAreaFinder";
+import RoofAreaFinder, { PITCH_FACTORS } from "./RoofAreaFinder";
+import HouseDescriber from "./HouseDescriber";
 import { usePrefersReducedMotion } from "../hooks/useMediaQuery";
+import { PREFILL_KEY } from "./Contact";
 
-// Bounds shared by the slider and the type-in field, so the two can never
-// disagree about what a valid roof area is.
-const AREA_MIN = 60;
-const AREA_MAX = 600;
+/**
+ * The roof estimator.
+ *
+ * WHAT IT DOES, AND WHY IT NO LONGER SHOWS A PRICE
+ * ------------------------------------------------
+ * This used to end on a dollar range. Every figure behind it — the per-m²
+ * material rates, the service multipliers, the add-on prices — was invented,
+ * and the page carried a warning saying so. A warning does not fix an invented
+ * number: people read the number, not the warning, and then they budget
+ * against it and feel misled when the real quote arrives.
+ *
+ * So the numbers are gone and what is left is the part that was always true
+ * and always useful: **how big your roof actually is, and what will move its
+ * price.** That is a genuinely better tool than a made-up range, and it is the
+ * thing most roofing "instant estimators" cannot do at all — they are a
+ * contact form with a progress bar. This one measures a roof.
+ *
+ * It ends by handing everything the visitor has told us straight into the
+ * enquiry form, so nobody types anything twice.
+ *
+ * WHEN REAL RATES ARRIVE: `PRICE_DRIVERS` below already models every factor a
+ * quote depends on, and each one carries the flag the pricing would key off.
+ * Dropping figures in means adding a rate to each and rendering a range in the
+ * summary — the questions, the ordering and the wording do not need to change.
+ * See LAUNCH-BLOCKERS.md for exactly what to ask for.
+ */
 
-/** Animates a number counting up to `value` whenever it changes. */
-function CountUp({ value, prefix = "" }) {
-  const [display, setDisplay] = useState(value);
-  const prev = useRef(value);
-  const reduceMotion = usePrefersReducedMotion();
+// Loaded only when someone opens the map tab. Leaflet plus its stylesheet is
+// around 45KB gzipped, and most people will use the address box and never
+// need it.
+const RoofMapDrawer = lazy(() => import("./RoofMapDrawer"));
 
-  useEffect(() => {
-    // Counting up is the moment the estimate lands, but for anyone who has
-    // asked the OS for less motion it just jumps straight to the figure.
-    if (reduceMotion) {
-      setDisplay(value);
-      prev.current = value;
-      return undefined;
-    }
-    const controls = animate(prev.current, value, {
-      duration: 0.6,
-      ease: [0.16, 1, 0.3, 1],
-      onUpdate: (v) => setDisplay(Math.round(v)),
-    });
-    prev.current = value;
-    return () => controls.stop();
-  }, [value, reduceMotion]);
+const AREA_MIN = 30;
+const AREA_MAX = 900;
 
-  return <>{prefix}{display.toLocaleString()}</>;
-}
+const EASE = [0.16, 1, 0.3, 1];
 
-/* ------------------------------------------------------------------ *
- * PLACEHOLDER PRICING — NOT CONFIRMED WITH THE CLIENT.
- * Every rate, multiplier and add-on price below is an invented estimate
- * for demo purposes. Customers act on price, so this block is a launch
- * blocker: see LAUNCH-BLOCKERS.md. Do not go live until Eugene has
- * reviewed and confirmed real figures for all four groups below.
- * ------------------------------------------------------------------ */
+/* -------------------------------------------------------------------------
+ * What actually moves the price of a roof.
+ *
+ * Every one of these is true of roofing generally — none is a claim about
+ * Hynson, none carries a figure, and none needed anybody's sign-off. They are
+ * the questions a roofer asks on the phone before coming out.
+ *
+ * `impact` is what gets shown back to the visitor in the summary. `key` is
+ * what a future pricing model would multiply on.
+ * ---------------------------------------------------------------------- */
 
-const SERVICE_OPTS = [
-  { id: "re-roof", label: "Re-Roofing", rate: 1.0 },
-  { id: "new-install", label: "New Roof Installation", rate: 1.12 },
-  { id: "repair", label: "Roof Repair", rate: 0.55 },
-];
-
-const MATERIALS = [
-  { id: "longrun", label: "Long-Run Steel", desc: "NZ's proven favourite", perSqm: 145 },
-  { id: "membrane", label: "Membrane System", desc: "Flat & low-slope roofs", perSqm: 125 },
-  { id: "premium", label: "Premium Long-Run", desc: "Maximum durability finish", perSqm: 168 },
+const SERVICES = [
+  { id: "re-roof", key: "reroof", label: "Full re-roof", desc: "Old roof off, new one on" },
+  { id: "new-install", key: "newbuild", label: "New roof", desc: "New build or extension" },
+  { id: "repair", key: "repair", label: "Repair a problem", desc: "Leak, flashing or storm damage" },
+  { id: "paint", key: "paint", label: "Roof painting", desc: "Recoat a sound roof" },
 ];
 
 const PITCHES = [
-  { id: "low", label: "Low (< 15°)", mult: 1.0 },
-  { id: "medium", label: "Medium (15–30°)", mult: 1.1 },
-  { id: "steep", label: "Steep (30°+)", mult: 1.28 },
+  { id: "low", label: "Low / nearly flat", hint: "You can barely see the slope" },
+  { id: "medium", label: "Normal pitch", hint: "The usual house roof" },
+  { id: "steep", label: "Steep", hint: "Noticeably steep from the street" },
 ];
 
-const ADDONS = [
-  { id: "gutters", label: "New spouting & downpipes", price: 2600 },
-  { id: "painting", label: "Roof painting", price: 3200 },
-  { id: "skylight", label: "Skylight flashing", price: 1250 },
+const STOREYS = [
+  { id: "one", label: "Single storey" },
+  { id: "two", label: "Two storeys" },
+  { id: "three", label: "Three or more" },
 ];
 
-/* -------------------------- end placeholder pricing ----------------------- */
+const ACCESS = [
+  { id: "easy", label: "Easy", hint: "Clear space all the way round" },
+  { id: "tight", label: "Tight", hint: "Fences, neighbours or a narrow drive" },
+  { id: "difficult", label: "Difficult", hint: "Steep site, no vehicle access" },
+];
+
+const CONDITION = [
+  { id: "sound", label: "Looks sound", hint: "Tired, but nothing obviously wrong" },
+  { id: "leaking", label: "It leaks", hint: "Water is getting in somewhere" },
+  { id: "poor", label: "Visibly poor", hint: "Rust, damage or sagging" },
+  { id: "unsure", label: "Not sure", hint: "That's what the inspection's for" },
+];
+
+const EXTRAS = [
+  { id: "spouting", label: "Spouting & downpipes" },
+  { id: "skylights", label: "Skylights" },
+  { id: "asbestos", label: "Possible asbestos" },
+  { id: "solar", label: "Solar panels to work around" },
+];
+
+/**
+ * The material question, kept from the original estimator.
+ *
+ * It was dropped when the pricing came out, on the grounds that without rates
+ * it had nothing to multiply. That was the wrong reason to remove it: it is
+ * useful to Eugene regardless — knowing someone is after a membrane rather
+ * than long-run changes the conversation before he even gets in the van — and
+ * "not sure" is a perfectly good answer that costs the visitor nothing.
+ */
+const MATERIALS = [
+  { id: "longrun", label: "Long-run steel", hint: "The usual New Zealand roof" },
+  { id: "membrane", label: "Membrane", hint: "Flat and low-slope roofs" },
+  { id: "tile", label: "Tile", hint: "Concrete or clay tiles" },
+  { id: "unsure", label: "Not sure yet", hint: "Happy to be advised" },
+];
+
+/**
+ * Turns the answers into plain-English reasons, in the order a roofer would
+ * raise them. This is the payoff screen: not a number, but an honest account
+ * of what the person quoting is going to be looking at.
+ */
+function priceDrivers({ area, areaRange, pitch, storeys, access, condition, extras, service }) {
+  const out = [];
+
+  if (area) {
+    // The figure lives in the body, not the heading. Headings here are
+    // uppercased, and "123 M² OF ROOF" reads badly — and when the describe
+    // method has produced a range, a single number in the heading contradicts
+    // the range shown directly above it.
+    const size = areaRange ? `${areaRange[0]}–${areaRange[1]} m²` : `${area} m²`;
+    out.push({
+      title: "The size of your roof",
+      body: `About ${size}. The starting point for any quote — materials and labour both scale with it. That's roof surface, not floor area, so it's already bigger than the ground the house sits on.`,
+    });
+  }
+
+  if (storeys === "two" || storeys === "three") {
+    out.push({
+      title: storeys === "two" ? "Two storeys" : "Three or more storeys",
+      body:
+        "Height means scaffolding and edge protection, and that is a real line on any honest roofing quote. It is also the main reason two similar-sized roofs can be quoted very differently.",
+    });
+  }
+
+  if (pitch === "steep") {
+    out.push({
+      title: "A steep roof",
+      body:
+        "Two things at once: more surface area than the footprint suggests, and slower, more careful work to stay safe on it.",
+    });
+  } else if (pitch === "low") {
+    out.push({
+      title: "A low pitch",
+      body:
+        "Below about 3° water stops shedding properly, so a low roof may need a membrane system rather than steel sheets. That changes the whole approach.",
+    });
+  }
+
+  if (access === "tight" || access === "difficult") {
+    out.push({
+      title: access === "tight" ? "Tight access" : "Difficult access",
+      body:
+        "Getting people, scaffold and several tonnes of material on and off the site is a real cost. A narrow drive or a steep section can matter more than the size of the roof.",
+    });
+  }
+
+  if (condition === "leaking" || condition === "poor") {
+    out.push({
+      title: condition === "leaking" ? "It's leaking" : "The roof is visibly past it",
+      body:
+        "Water that has been getting in has usually reached the purlins and the rafter ends. Nobody can price that from the ground — it is exactly what the free inspection is for, and it is the single biggest unknown in a re-roof.",
+    });
+  } else if (service === "re-roof") {
+    out.push({
+      title: "What's underneath",
+      body:
+        "The structure only becomes visible once the old roof is off. Any rot or rusted purlins found then have to be dealt with while they are reachable.",
+    });
+  }
+
+  if (extras.includes("asbestos")) {
+    out.push({
+      title: "Possible asbestos",
+      body:
+        "Older roofs and their underlays sometimes contain it. It has to be tested and, if present, removed under the proper rules. Worth flagging early — it changes the plan, not just the price.",
+    });
+  }
+
+  if (extras.includes("spouting")) {
+    out.push({
+      title: "Spouting and downpipes",
+      body:
+        "Almost always cheaper done while the scaffold is already up than as a separate job later.",
+    });
+  }
+
+  if (extras.includes("skylights")) {
+    out.push({
+      title: "Skylights",
+      body: "Every penetration needs its own flashing made and fitted. They are fiddly, and they are where roofs leak.",
+    });
+  }
+
+  if (extras.includes("solar")) {
+    out.push({
+      title: "Solar panels",
+      body: "They need removing and refitting, usually by the solar installer, and that has to be coordinated.",
+    });
+  }
+
+  return out;
+}
+
+const METHOD_LABEL = {
+  address: "from your address",
+  map: "traced on the map",
+  describe: "from your description",
+  manual: "entered by hand",
+};
+
+/** One selectable button, used by every question in step two. */
+function Choice({ on, onClick, label, hint, testid }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={on}
+      data-testid={testid}
+      className={`btn-lift border p-4 text-left transition-colors ${
+        on
+          ? "border-accent bg-accent/10"
+          : "border-line-strong bg-surface hover:border-accent/60"
+      }`}
+    >
+      <span className={`block font-display text-sm font-bold ${on ? "text-accent" : "text-content"}`}>
+        {label}
+      </span>
+      {hint && <span className="mt-1 block t-small text-content-muted">{hint}</span>}
+    </button>
+  );
+}
 
 export default function QuoteCalculator({ compact = false } = {}) {
   const [step, setStep] = useState(0);
+  const reduceMotion = usePrefersReducedMotion();
+
+  // ---- step 1: how big is the roof ----
+  const [method, setMethod] = useState("address");
+  const [area, setArea] = useState(null);
+  const [footprint, setFootprint] = useState(null);
+  const [areaRange, setAreaRange] = useState(null);
+  const [centre, setCentre] = useState(null);
+  const [address, setAddress] = useState(null);
+
+  // ---- step 2: what's the job ----
   const [service, setService] = useState("re-roof");
-  const [area, setArea] = useState(180);
-  // The typed value is held as a string while the field has focus. Clamping on
-  // every keystroke would fight the user — typing "2" on the way to "240"
-  // would snap straight to the minimum — so the draft is only committed on
-  // blur or Enter.
-  const [areaDraft, setAreaDraft] = useState(String(180));
   const [pitch, setPitch] = useState("medium");
-  const [material, setMaterial] = useState("longrun");
-  const [addons, setAddons] = useState([]);
-
-  const mat = MATERIALS.find((m) => m.id === material);
-  const pit = PITCHES.find((p) => p.id === pitch);
-  const svc = SERVICE_OPTS.find((s) => s.id === service);
-  const addonTotal = ADDONS.filter((a) => addons.includes(a.id)).reduce((s, a) => s + a.price, 0);
-  const base = mat.perSqm * area * pit.mult * svc.rate + addonTotal;
-  const low = Math.round((base * 0.9) / 100) * 100;
-  const high = Math.round((base * 1.12) / 100) * 100;
-
-  const toggleAddon = (id) => setAddons((prev) => (prev.includes(id) ? prev.filter((a) => a !== id) : [...prev, id]));
-
-  const requestSurvey = () => {
-    const summary = `Instant estimate: $${low.toLocaleString()} – $${high.toLocaleString()} NZD · ${area}m² · ${mat.label} · ${pit.label} · ${svc.label}${addons.length ? " · Add-ons: " + addons.join(", ") : ""}`;
-    window.dispatchEvent(new CustomEvent("prefill-enquiry", { detail: { service: svc.label, estimate: summary } }));
-    scrollToHash("#contact");
-  };
-
-  // Commits whatever was typed: clamp into range, round to a whole metre, and
-  // fall back to the current value if the field was left empty or unparseable.
-  const commitArea = () => {
-    const n = Math.round(Number(areaDraft));
-    if (areaDraft.trim() === "" || !Number.isFinite(n)) {
-      setAreaDraft(String(area));
-      return;
-    }
-    const clamped = Math.min(AREA_MAX, Math.max(AREA_MIN, n));
-    setArea(clamped);
-    setAreaDraft(String(clamped));
-    setFoundFrom(null); // typed by hand, so it is no longer a looked-up figure
-  };
-
-  // Set when the area came from an address lookup rather than the slider, so
-  // the source can be shown. Cleared as soon as the visitor overrides it.
-  const [foundFrom, setFoundFrom] = useState(null);
-
-  const applyFoundArea = (roofArea, working) => {
-    const clamped = Math.min(AREA_MAX, Math.max(AREA_MIN, Math.round(roofArea)));
-    setArea(clamped);
-    setAreaDraft(String(clamped));
-    setFoundFrom(working);
-  };
-
-  const steps = ["Project", "Roof", "Material", "Estimate"];
-
-  // A step is only complete when it has a usable answer. Steps 0 and 2 ship
-  // with a sensible default so they are always satisfied; step 1 is the one
-  // that can genuinely be wrong, because the number field can be mid-edit,
-  // empty, or outside the range the slider allows.
-  const areaDraftValid = (() => {
-    const n = Number(areaDraft);
-    return areaDraft.trim() !== "" && Number.isFinite(n) && n >= AREA_MIN && n <= AREA_MAX;
-  })();
-  const stepValid = (i) => (i === 1 ? areaDraftValid : true);
-  const canAdvance = stepValid(step);
-
-  // Furthest step reached, so the tabs can jump back to anything already
-  // answered without letting people skip ahead past an unanswered step.
-  const [maxStep, setMaxStep] = useState(0);
-  const goToStep = (i) => {
-    if (i > maxStep || !stepValid(step)) return;
-    setStep(i);
-  };
-  const goNext = () => {
-    if (!canAdvance) return;
-    const next = Math.min(3, step + 1);
-    setStep(next);
-    setMaxStep((m) => Math.max(m, next));
-  };
+  const [storeys, setStoreys] = useState("one");
+  const [access, setAccess] = useState("easy");
+  const [condition, setCondition] = useState("unsure");
+  const [material, setMaterial] = useState("unsure");
+  const [extras, setExtras] = useState([]);
 
   const cardRef = useRef(null);
+  const navigate = useNavigate();
+  const factor = PITCH_FACTORS[pitch] ?? 1;
 
+  const toggleExtra = (id) =>
+    setExtras((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
 
+  /* ---- the three ways in. Switching between them never loses anything ----
+     Each method keeps its own result, so someone can look their address up,
+     try the map, decide they preferred the first answer and go back to it. */
+  const fromAddress = useCallback((roofArea, working) => {
+    setArea(Math.min(AREA_MAX, Math.max(AREA_MIN, Math.round(roofArea))));
+    setFootprint(working?.footprint ?? null);
+    setAreaRange(null);
+    setMethod("address");
+    if (working?.lat && working?.lon) setCentre([working.lat, working.lon]);
+    if (working?.label) setAddress(working.label);
+  }, []);
 
-  // `step` is what the tabs and buttons act on; `shownStep` is what is
-  // currently painted. When they differ we fade out, swap, then fade back in,
-  // which is what gives each step a real exit without any remounting.
-  const [shownStep, setShownStep] = useState(0);
-  const swapping = shownStep !== step;
+  const fromMap = useCallback((result) => {
+    if (!result) return;
+    setArea(Math.min(AREA_MAX, Math.max(AREA_MIN, result.roof)));
+    setFootprint(result.footprint);
+    setAreaRange(null);
+    setMethod("map");
+  }, []);
 
-  useEffect(() => {
-    if (shownStep === step) return undefined;
-    const t = setTimeout(() => setShownStep(step), 180);
-    return () => clearTimeout(t);
-  }, [step, shownStep]);
+  const fromDescribe = useCallback((result) => {
+    if (!result) return;
+    setArea(Math.min(AREA_MAX, Math.max(AREA_MIN, result.roof)));
+    setFootprint(result.footprint);
+    setAreaRange([result.low, result.high]);
+    setMethod("describe");
+  }, []);
 
-  // On step change, bring the top of the panel back into view. Inside the
-  // modal that is the panel's own scroller; on the page we only do it if the
-  // card has already scrolled off the top, so it never hijacks the page.
+  const [tab, setTab] = useState("address");
+
+  /**
+   * Everything the visitor told us, handed to the enquiry form.
+   *
+   * The enquiry form is on the homepage and on /contact, but NOT on
+   * /roof-cost, where this tool also lives. The old version just fired an
+   * event and scrolled to "#contact"; on /roof-cost there is no such section,
+   * so the button dispatched into nothing and scrolled nowhere. It looked
+   * broken because it was.
+   *
+   * So: if the form is on this page, hand it over directly. If it isn't, park
+   * the details in sessionStorage and go to the contact page, where the form
+   * picks them up as it mounts. Either way nothing is retyped.
+   */
+  const sendToQuote = () => {
+    const svc = SERVICES.find((s) => s.id === service);
+    const lines = [
+      area
+        ? `Roof size: about ${areaRange ? `${areaRange[0]}–${areaRange[1]}` : area} m² (${METHOD_LABEL[method]})`
+        : null,
+      address ? `Address: ${address}` : null,
+      `Job: ${svc.label}`,
+      `Pitch: ${PITCHES.find((p) => p.id === pitch).label}`,
+      `Storeys: ${STOREYS.find((s) => s.id === storeys).label}`,
+      `Access: ${ACCESS.find((a) => a.id === access).label}`,
+      `Roof condition: ${CONDITION.find((c) => c.id === condition).label}`,
+      `Roofing they want: ${MATERIALS.find((m) => m.id === material).label}`,
+      extras.length
+        ? `Also mentioned: ${extras.map((e) => EXTRAS.find((x) => x.id === e).label).join(", ")}`
+        : null,
+    ].filter(Boolean);
+
+    const detail = { service: svc.label, estimate: lines.join("\n"), address: address || "" };
+
+    if (document.querySelector("#contact")) {
+      window.dispatchEvent(new CustomEvent("prefill-enquiry", { detail }));
+      scrollToHash("#contact");
+      return;
+    }
+
+    try {
+      sessionStorage.setItem(PREFILL_KEY, JSON.stringify(detail));
+    } catch {
+      // Private browsing — the details are lost, but the navigation still
+      // works and the form is still there to fill in.
+    }
+    navigate("/contact");
+  };
+
+  const steps = ["Your roof", "The job", "Summary"];
+  const canAdvance = step === 0 ? Boolean(area) : true;
+
+  const goNext = () => {
+    if (!canAdvance) return;
+    setStep((s) => Math.min(2, s + 1));
+  };
+
+  // Bring the top of the panel back into view on a step change, but never
+  // hijack the page when the card is already fully visible.
   useEffect(() => {
     const el = cardRef.current;
     if (!el) return;
-    const scroller = el.closest("[data-lenis-prevent]");
-    if (scroller) {
-      scroller.scrollTo({ top: 0, behavior: "smooth" });
-    } else if (el.getBoundingClientRect().top < 0) {
+    if (el.getBoundingClientRect().top < 0) {
       const y = el.getBoundingClientRect().top + window.scrollY - 100;
       if (window.__lenis) window.__lenis.scrollTo(y);
       else window.scrollTo({ top: y, behavior: "smooth" });
     }
   }, [step]);
 
+  const drivers = priceDrivers({
+    area,
+    areaRange,
+    pitch,
+    storeys,
+    access,
+    condition,
+    extras,
+    service,
+  });
+
+  const TABS = [
+    { id: "address", label: "Use my address", icon: MapPin },
+    { id: "map", label: "Draw it on a map", icon: PencilRuler },
+    { id: "describe", label: "Describe my house", icon: Home },
+  ];
+
   return (
     <section
       id={compact ? undefined : "calculator"}
-      // `dark` is a plain class in the stylesheet, not a `:root` rule, so
-      // scoping it to this one section flips the whole ink/zinc palette for
-      // its subtree. That gives the page its second dark band for rhythm
-      // without recolouring a single child. Not applied in the modal, where
-      // the surrounding chrome stays light.
-      className={`relative overflow-hidden bg-ink-950 ${compact ? "py-8 sm:py-10" : "dark py-28 sm:py-36"}`}
+      className={`relative bg-ground ${compact ? "py-8 sm:py-10" : "py-section-sm sm:py-section"}`}
       data-testid="quote-calculator-container"
     >
-      {!compact && <div className="absolute -right-40 top-0 h-96 w-96 rounded-full bg-brand/10 blur-[120px]" />}
       <div className="mx-auto max-w-4xl px-5 sm:px-8">
-        {/* Headline left, support right — not centred. */}
-        <div className={compact ? "mb-8" : "mb-12 flex flex-col justify-between gap-5 sm:flex-row sm:items-end"}>
-          <div>
-            <p className="font-mono text-[10px] tracking-[0.3em] text-brand-bright uppercase">— Instant estimator</p>
-            <h2 className="mt-4 font-display text-[clamp(2.25rem,5vw,4rem)] font-extrabold uppercase leading-[1.0] tracking-[-0.02em] text-zinc-50">
-              What's your roof <span className="text-brand-bright">likely to cost?</span>
-            </h2>
-          </div>
-          <div className="max-w-xs sm:text-right">
-            <p className="text-sm leading-relaxed text-zinc-400">
-              Four quick steps. A ballpark range in seconds — then book a free site inspection for a detailed
-              quotation.
-            </p>
-            {/* The full explanation of what actually moves a roofing price —
-                the thing this estimator can only gesture at — is its own page. */}
-            {!compact && (
-              <Link
-                to="/roof-cost"
-                className="btn-lift mt-5 inline-flex items-center gap-2 border border-line-strong bg-surface px-5 py-3 font-mono text-[10px] font-semibold uppercase tracking-[0.2em] text-content hover:border-accent hover:text-accent"
-                data-testid="calc-cost-guide-link"
-              >
-                Roof cost guide <ArrowRight className="h-3.5 w-3.5" />
-              </Link>
-            )}
-          </div>
-        </div>
-
-        <div className="relative">
-          <div className="absolute -bottom-4 -right-4 hidden h-full w-full bg-brand-ember sm:block" />
-          <div ref={cardRef} className="relative border border-ink-700/40 bg-ink-900">
-          <div className="flex border-b border-ink-700/30">
-            {steps.map((s, i) => {
-              const reachable = i <= maxStep;
-              return (
-                <button
-                  key={s}
-                  type="button"
-                  onClick={() => goToStep(i)}
-                  disabled={!reachable}
-                  aria-current={i === step ? "step" : undefined}
-                  className={`flex-1 px-3 py-3 text-center font-mono text-[10px] tracking-[0.2em] uppercase transition-colors ${
-                    i === step
-                      ? "bg-brand/10 text-brand"
-                      : reachable
-                        ? "text-zinc-400 hover:bg-ink-850 hover:text-zinc-100"
-                        : "cursor-not-allowed text-zinc-600"
-                  }`}
-                  data-testid={`calc-step-tab-${i}`}
-                >
-                  {i + 1}. {s}
-                </button>
-              );
-            })}
-          </div>
-
-          <div className="p-6 sm:p-10">
-            {/* Height is animated to the measured height of whatever step is
-                mounted, so the panel grows and shrinks smoothly instead of the
-                button row below it jumping. */}
-            <motion.div
-              initial={false}
-              transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
-            >
-            {/* Deliberately NOT AnimatePresence.
-                Three variants were tried here — mode="wait", plain sync and
-                mode="popLayout" — and in this component every one of them left
-                exiting steps mounted forever, frozen at their `initial` state,
-                so the panel accumulated all four steps on top of each other.
-                A keyed remount plus the height ResizeObserver's re-renders is
-                evidently more than the presence machinery copes with.
-
-                This does the same job with no remount at all: one element that
-                fades out, swaps its content at the midpoint, and fades back
-                in. Fully deterministic and impossible to leave half-finished.
-
-                There is also no animated height wrapper any more. It needed
-                `overflow-hidden` plus a ResizeObserver, and that combination
-                clipped the address suggestions to an unreadable sliver when
-                the observer stopped firing — the panel stayed 419px while its
-                content was 605px. The height change is already hidden by the
-                crossfade (the content is at opacity 0 while it resizes), so
-                plain auto height looks the same and cannot clip anything. */}
-            <motion.div
-              animate={swapping ? { opacity: 0, y: -10 } : { opacity: 1, y: 0 }}
-              initial={false}
-              transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-            >
+        {!compact && (
+          <div className="mb-12 flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
             <div>
-              {shownStep === 0 && (
-                <div className="grid gap-3 sm:grid-cols-3" data-testid="calc-step-service">
-                  {SERVICE_OPTS.map((s) => (
+              <p className="t-label text-accent">— Roof size tool</p>
+              <h2 className="mt-4 t-h2 text-content">How big is your roof?</h2>
+            </div>
+            <p className="max-w-xs t-small text-content-muted sm:text-right">
+              Most people have no idea, and it's the first thing a roofer needs. Three ways to
+              find out — the quickest takes about ten seconds.
+            </p>
+          </div>
+        )}
+
+        <div ref={cardRef} className="border border-line bg-surface shadow-card">
+          {/* ---- step tabs ---- */}
+          <div className="flex border-b border-line">
+            {steps.map((s, i) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => i <= step && setStep(i)}
+                disabled={i > step}
+                aria-current={i === step ? "step" : undefined}
+                className={`flex-1 px-3 py-3.5 text-center font-mono text-[10px] uppercase tracking-[0.18em] transition-colors ${
+                  i === step
+                    ? "bg-accent/10 text-accent"
+                    : i < step
+                      ? "text-content-muted hover:bg-surface-hover hover:text-content"
+                      : "cursor-not-allowed text-content-faint"
+                }`}
+                data-testid={`calc-step-tab-${i}`}
+              >
+                {i + 1}. {s}
+              </button>
+            ))}
+          </div>
+
+          <div className="p-6 sm:p-9">
+            {/* ================= STEP 1 — how big is the roof ================= */}
+            {step === 0 && (
+              <div data-testid="calc-step-roof">
+                {/* Method picker. The current answer survives switching. */}
+                <div className="grid gap-2 sm:grid-cols-3" role="tablist" aria-label="How to find your roof size">
+                  {TABS.map((t) => (
                     <button
-                      key={s.id}
-                      onClick={() => setService(s.id)}
-                      className={`btn-lift border p-5 text-left ${service === s.id ? "border-brand bg-brand/10" : "border-ink-700/40 bg-ink-850 hover:border-brand/50"}`}
-                      data-testid={`calc-service-${s.id}`}
+                      key={t.id}
+                      type="button"
+                      role="tab"
+                      aria-selected={tab === t.id}
+                      onClick={() => setTab(t.id)}
+                      className={`btn-lift flex items-center gap-2.5 border px-4 py-3 text-left transition-colors ${
+                        tab === t.id
+                          ? "border-accent bg-accent/10 text-accent"
+                          : "border-line-strong bg-surface text-content-muted hover:border-accent/60 hover:text-content"
+                      }`}
+                      data-testid={`calc-method-${t.id}`}
                     >
-                      <p className="font-display text-base font-bold uppercase text-zinc-50">{s.label}</p>
+                      <t.icon className="h-4 w-4 shrink-0" />
+                      <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.14em]">
+                        {t.label}
+                      </span>
                     </button>
                   ))}
                 </div>
-              )}
 
-              {shownStep === 1 && (
-                <div data-testid="calc-step-roof">
-                  <label
-                    htmlFor="calc-area-number"
-                    className="font-mono text-xs tracking-[0.2em] text-zinc-400 uppercase"
+                <div className="mt-7">
+                  {tab === "address" && (
+                    <RoofAreaFinder pitch={pitch} onPick={fromAddress} />
+                  )}
+
+                  {tab === "map" && (
+                    <Suspense
+                      fallback={
+                        <div className="flex h-[340px] items-center justify-center border border-line bg-surface-sunken sm:h-[420px]">
+                          <Loader2 className="h-5 w-5 animate-spin text-content-faint" />
+                        </div>
+                      }
+                    >
+                      <RoofMapDrawer centre={centre} onArea={fromMap} pitchFactor={factor} />
+                    </Suspense>
+                  )}
+
+                  {tab === "describe" && (
+                    <HouseDescriber onArea={fromDescribe} pitchFactor={factor} />
+                  )}
+                </div>
+
+                {/* The running answer, always visible, always labelled with
+                    where it came from. */}
+                {area && (
+                  <div
+                    className="mt-7 flex flex-wrap items-center justify-between gap-4 border border-line bg-surface-sunken p-5"
+                    data-testid="calc-current-area"
                   >
-                    Roof area
-                  </label>
+                    <div className="flex items-center gap-3">
+                      <Ruler className="h-5 w-5 shrink-0 text-accent" aria-hidden="true" />
+                      <div>
+                        <p className="font-display text-xl font-bold text-content">
+                          {areaRange ? `${areaRange[0]}–${areaRange[1]} m²` : `${area} m²`}
+                        </p>
+                        <p className="mt-0.5 t-label text-content-faint">
+                          Roof size {METHOD_LABEL[method]}
+                          {footprint ? ` · ${footprint} m² footprint` : ""}
+                        </p>
+                      </div>
+                    </div>
+                    <label className="flex items-center gap-2 t-label text-content-faint">
+                      Adjust
+                      <input
+                        type="number"
+                        min={AREA_MIN}
+                        max={AREA_MAX}
+                        value={area}
+                        onChange={(e) => {
+                          const n = Number(e.target.value);
+                          if (!Number.isFinite(n)) return;
+                          setArea(n);
+                          setAreaRange(null);
+                          setMethod("manual");
+                        }}
+                        className="h-11 w-24 border border-line bg-surface px-3 text-right font-display text-base font-bold text-content outline-none focus:border-accent"
+                        data-testid="calc-area-number"
+                        aria-label="Roof area in square metres"
+                      />
+                    </label>
 
-                  {/* Slider and type-in are two views of one value. Dragging
-                      updates the number, typing moves the slider. */}
-                  <div className="mt-4 flex items-center gap-4">
+                    {/* The drag slider is back.
+                        The original estimator had one and the first version of
+                        this rewrite dropped it for a number box alone. That was
+                        a straight loss: nudging a figure by feel is far nicer
+                        than selecting text and retyping it, especially on a
+                        phone. The two are two views of one value — dragging
+                        updates the number, typing moves the handle. */}
                     <input
                       type="range"
                       min={AREA_MIN}
                       max={AREA_MAX}
-                      // step=1, not 10: a typed figure like 245 is not on a
-                      // 10m grid, and the browser would silently snap the
-                      // thumb to 250 while the number field still read 245.
                       step="1"
                       value={area}
                       onChange={(e) => {
-                        const n = Number(e.target.value);
-                        setArea(n);
-                        setAreaDraft(String(n));
-                        setFoundFrom(null); // manual override — no longer from the lookup
+                        setArea(Number(e.target.value));
+                        setAreaRange(null);
+                        setMethod("manual");
                       }}
-                      aria-label="Roof area in square metres"
-                      className="h-11 min-w-0 flex-1 accent-brand"
+                      aria-label="Adjust roof area by dragging"
+                      className="h-11 w-full min-w-0 basis-full accent-accent"
                       data-testid="calc-area-slider"
                     />
-                    <div className="relative shrink-0">
-                      <input
-                        id="calc-area-number"
-                        type="number"
-                        inputMode="numeric"
-                        min={AREA_MIN}
-                        max={AREA_MAX}
-                        value={areaDraft}
-                        onChange={(e) => setAreaDraft(e.target.value)}
-                        onBlur={() => commitArea()}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            e.preventDefault();
-                            commitArea();
-                            e.currentTarget.blur();
-                          }
-                        }}
-                        className="h-[54px] w-28 border border-ink-700/40 bg-ink-850 pl-4 pr-9 text-right font-display text-lg font-bold text-zinc-50 outline-none transition-colors focus:border-brand"
-                        data-testid="calc-area-number"
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ===================== STEP 2 — the job ===================== */}
+            {step === 1 && (
+              <div className="grid gap-8" data-testid="calc-step-job">
+                <div>
+                  <p className="t-label text-content-faint">What do you need done?</p>
+                  <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                    {SERVICES.map((s) => (
+                      <Choice
+                        key={s.id}
+                        on={service === s.id}
+                        onClick={() => setService(s.id)}
+                        label={s.label}
+                        hint={s.desc}
+                        testid={`calc-service-${s.id}`}
                       />
-                      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 font-mono text-xs text-zinc-500">
-                        m²
-                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <p className="t-label text-content-faint">How steep is it?</p>
+                  <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                    {PITCHES.map((p) => (
+                      <Choice
+                        key={p.id}
+                        on={pitch === p.id}
+                        onClick={() => setPitch(p.id)}
+                        label={p.label}
+                        hint={p.hint}
+                        testid={`calc-pitch-${p.id}`}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid gap-8 sm:grid-cols-2">
+                  <div>
+                    <p className="t-label text-content-faint">How many storeys?</p>
+                    <div className="mt-3 grid gap-2">
+                      {STOREYS.map((s) => (
+                        <Choice
+                          key={s.id}
+                          on={storeys === s.id}
+                          onClick={() => setStoreys(s.id)}
+                          label={s.label}
+                          testid={`calc-storeys-${s.id}`}
+                        />
+                      ))}
                     </div>
                   </div>
-                  <p className="mt-2 font-mono text-[10px] tracking-[0.15em] text-zinc-500 uppercase">
-                    Type an exact figure, or drag — {AREA_MIN}–{AREA_MAX} m²
-                  </p>
-                  <div className="mt-8 grid gap-3 sm:grid-cols-3">
-                    {PITCHES.map((p) => (
-                      <button
-                        key={p.id}
-                        onClick={() => setPitch(p.id)}
-                        className={`btn-lift border p-4 text-sm ${pitch === p.id ? "border-brand bg-brand/10 text-zinc-50" : "border-ink-700/40 bg-ink-850 text-zinc-400 hover:border-brand/50"}`}
-                        data-testid={`calc-pitch-${p.id}`}
-                      >
-                        {p.label}
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* Sits after the pitch buttons on purpose: the lookup needs
-                      a pitch to convert a flat footprint into a roof area, so
-                      the pitch has to be chosen first for the working to read
-                      correctly. */}
-                  <div className="mt-8">
-                    <RoofAreaFinder pitch={pitch} onPick={applyFoundArea} />
-                    {foundFrom && (
-                      <p className="mt-3 font-mono text-[10px] tracking-[0.15em] text-brand uppercase" data-testid="calc-area-source">
-                        Roof area set from building outline · footprint {foundFrom.footprint} m² × {foundFrom.factor}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {shownStep === 2 && (
-                <div data-testid="calc-step-material">
-                  <div className="mb-5 flex w-fit items-center gap-2 border border-brand-ember/40 bg-brand-ember/10 px-3 py-1.5 text-brand-ember">
-                    <AlertTriangle className="h-3.5 w-3.5" />
-                    <span className="font-mono text-[10px] tracking-[0.15em] uppercase">Demo rates — not final pricing</span>
-                  </div>
-                  <div className="grid gap-3 sm:grid-cols-3">
-                    {MATERIALS.map((m) => (
-                      <button
-                        key={m.id}
-                        onClick={() => setMaterial(m.id)}
-                        className={`btn-lift border p-5 text-left ${material === m.id ? "border-brand bg-brand/10" : "border-ink-700/40 bg-ink-850 hover:border-brand/50"}`}
-                        data-testid={`calc-material-${m.id}`}
-                      >
-                        <p className="font-display text-sm font-bold uppercase text-zinc-50">{m.label}</p>
-                        <p className="mt-1 text-xs text-zinc-500">{m.desc}</p>
-                        <p className="mt-3 font-mono text-xs text-brand">${m.perSqm}/m²</p>
-                      </button>
-                    ))}
-                  </div>
-                  <p className="mt-8 font-mono text-xs tracking-[0.2em] text-zinc-400 uppercase">Add-ons</p>
-                  <div className="mt-3 grid gap-3 sm:grid-cols-3">
-                    {ADDONS.map((a) => (
-                      <button
-                        key={a.id}
-                        onClick={() => toggleAddon(a.id)}
-                        className={`btn-lift border p-4 text-left text-xs ${addons.includes(a.id) ? "border-brand bg-brand/10 text-zinc-50" : "border-ink-700/40 bg-ink-850 text-zinc-400 hover:border-brand/50"}`}
-                        data-testid={`calc-addon-${a.id}`}
-                      >
-                        {a.label}
-                        <span className="mt-1 block font-mono text-brand">+${a.price.toLocaleString()}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {shownStep === 3 && (
-                <div className="text-center" data-testid="calc-step-estimate">
-                  <div className="mx-auto mb-5 flex w-fit items-center gap-2 border border-brand-ember/40 bg-brand-ember/10 px-3 py-1.5 text-brand-ember" data-testid="calc-placeholder-badge">
-                    <AlertTriangle className="h-3.5 w-3.5" />
-                    <span className="font-mono text-[10px] tracking-[0.15em] uppercase">Demo pricing — not final rates</span>
-                  </div>
-                  <Calculator className="mx-auto h-8 w-8 text-brand" />
-                  <p className="mt-4 font-mono text-xs tracking-[0.3em] text-zinc-400 uppercase">Your estimated range</p>
-                  <p className="mt-3 font-display text-4xl font-extrabold text-zinc-50 sm:text-6xl" data-testid="calc-estimate-value">
-                    <CountUp value={low} prefix="$" /> <span className="text-brand">–</span> <CountUp value={high} prefix="$" />
-                  </p>
-                  <p className="mt-4 text-sm text-zinc-400">
-                    {area} m² · {mat.label} · {pit.label} · {svc.label}
-                    {addons.length > 0 && ` · ${addons.length} add-on${addons.length > 1 ? "s" : ""}`}
-                  </p>
-                  {/* What actually moves this number. Answers the question the
-                      range immediately raises, instead of leaving people to
-                      guess why it isn't one figure. */}
-                  <div className="mx-auto mt-8 max-w-md border-t border-ink-700/30 pt-6 text-left">
-                    <p className="font-mono text-[10px] tracking-[0.25em] text-zinc-500 uppercase">
-                      What changes this price
-                    </p>
-                    <ul className="mt-3 grid gap-2 text-sm text-zinc-400">
-                      {[
-                        "Condition of what's underneath — rot or rusted purlins add work",
-                        "Access and storey height, and whether scaffold is needed",
-                        "Roof shape — valleys, dormers and penetrations all add flashings",
-                        "Spouting, skylights or painting done at the same time",
-                      ].map((line) => (
-                        <li key={line} className="flex gap-2.5">
-                          <span className="mt-[7px] h-1 w-1 shrink-0 rotate-45 bg-brand" />
-                          {line}
-                        </li>
+                  <div>
+                    <p className="t-label text-content-faint">Getting round the house?</p>
+                    <div className="mt-3 grid gap-2">
+                      {ACCESS.map((a) => (
+                        <Choice
+                          key={a.id}
+                          on={access === a.id}
+                          onClick={() => setAccess(a.id)}
+                          label={a.label}
+                          hint={a.hint}
+                          testid={`calc-access-${a.id}`}
+                        />
                       ))}
-                    </ul>
+                    </div>
                   </div>
-
-                  <p className="mx-auto mt-6 max-w-sm text-xs leading-relaxed text-zinc-500">
-                    Ballpark only, using placeholder rates not yet confirmed by Hynson — every roof is different. We
-                    provide free site inspections and detailed written quotes.
-                  </p>
-                  <button
-                    onClick={requestSurvey}
-                    className="btn-lift mt-8 bg-brand px-8 py-4 font-mono text-xs font-semibold tracking-[0.25em] text-white uppercase hover:bg-brand-bright warm-glow"
-                    data-testid="calc-request-survey-btn"
-                  >
-                    Book my free site inspection
-                  </button>
                 </div>
-              )}
-            </div>
-            </motion.div>
-            </motion.div>
 
-            <div className="mt-10 flex items-center justify-between border-t border-ink-700/30 pt-6">
-              <button
-                onClick={() => setStep((s) => Math.max(0, s - 1))}
-                disabled={step === 0}
-                className="flex items-center gap-2 font-mono text-xs tracking-[0.2em] text-zinc-400 uppercase transition-colors hover:text-zinc-100 disabled:opacity-30"
-                data-testid="calc-back-btn"
+                <div>
+                  <p className="t-label text-content-faint">What roofing are you after?</p>
+                  <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                    {MATERIALS.map((m) => (
+                      <Choice
+                        key={m.id}
+                        on={material === m.id}
+                        onClick={() => setMaterial(m.id)}
+                        label={m.label}
+                        hint={m.hint}
+                        testid={`calc-material-${m.id}`}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <p className="t-label text-content-faint">What sort of shape is the roof in?</p>
+                  <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                    {CONDITION.map((c) => (
+                      <Choice
+                        key={c.id}
+                        on={condition === c.id}
+                        onClick={() => setCondition(c.id)}
+                        label={c.label}
+                        hint={c.hint}
+                        testid={`calc-condition-${c.id}`}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <p className="t-label text-content-faint">Anything else on the roof?</p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {EXTRAS.map((e) => {
+                      const on = extras.includes(e.id);
+                      return (
+                        <button
+                          key={e.id}
+                          type="button"
+                          onClick={() => toggleExtra(e.id)}
+                          aria-pressed={on}
+                          className={`btn-lift border px-4 py-3 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] transition-colors ${
+                            on
+                              ? "border-accent bg-accent/10 text-accent"
+                              : "border-line-strong bg-surface text-content-muted hover:border-accent/60 hover:text-content"
+                          }`}
+                          data-testid={`calc-extra-${e.id}`}
+                        >
+                          {e.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ===================== STEP 3 — summary ===================== */}
+            {step === 2 && (
+              <motion.div
+                initial={reduceMotion ? false : { opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, ease: EASE }}
+                data-testid="calc-step-summary"
               >
-                <ArrowLeft className="h-4 w-4" /> Back
-              </button>
-              {step < 3 && (
-                <button
-                  onClick={goNext}
-                  disabled={!canAdvance}
-                  title={canAdvance ? undefined : `Enter a roof area between ${AREA_MIN} and ${AREA_MAX} m²`}
-                  className="btn-lift flex items-center gap-2 bg-brand px-6 py-3 font-mono text-xs font-semibold tracking-[0.2em] text-white uppercase hover:bg-brand-bright disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-brand"
-                  data-testid="calc-next-btn"
-                >
-                  Next <ArrowRight className="h-4 w-4" />
-                </button>
-              )}
-            </div>
+                <div className="border border-accent/40 bg-accent/10 p-6 sm:p-8">
+                  <p className="t-label text-accent">Your roof</p>
+                  <p className="mt-3 font-display text-[clamp(2.5rem,7vw,4rem)] font-extrabold leading-none text-content">
+                    {areaRange ? `${areaRange[0]}–${areaRange[1]}` : area}
+                    <span className="ml-2 text-[0.4em] font-bold">m²</span>
+                  </p>
+                  <p className="mt-3 t-small text-content-muted">
+                    Worked out {METHOD_LABEL[method]}
+                    {footprint ? `, from a ${footprint} m² footprint` : ""}. That's roof surface,
+                    not floor area.
+                  </p>
+                </div>
+
+                <div className="mt-10">
+                  <h3 className="t-h3 text-content">What will move your price</h3>
+                  <p className="mt-2 t-small text-content-muted">
+                    Based on what you've told us. These are the things Eugene will be looking at
+                    when he comes out.
+                  </p>
+                  <div className="mt-6 grid gap-px border border-line bg-line">
+                    {drivers.map((d) => (
+                      <div key={d.title} className="bg-surface p-5 sm:p-6">
+                        <p className="flex items-start gap-2.5 font-display text-sm font-bold uppercase tracking-tight text-content">
+                          <Check className="mt-0.5 h-4 w-4 shrink-0 text-accent" aria-hidden="true" />
+                          {d.title}
+                        </p>
+                        <p className="mt-2 pl-[26px] t-small text-content-muted">{d.body}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* The hand-off. Everything above travels with them. */}
+                <div className="mt-10 border-t border-line pt-8">
+                  <h3 className="t-h3 text-content">Ready for a real number?</h3>
+                  <p className="mt-2 max-w-measure t-body text-content-muted">
+                    Eugene will come and look at the roof, free, and put a written quote in front
+                    of you. Send this through and you won't have to type any of it again.
+                  </p>
+                  <div className="mt-6 flex flex-wrap gap-3">
+                    <button
+                      type="button"
+                      onClick={sendToQuote}
+                      className="btn-lift inline-flex items-center gap-2 bg-accent px-7 py-4 font-mono text-xs font-semibold uppercase tracking-[0.2em] text-accent-on hover:bg-accent-hover"
+                      data-testid="calc-request-survey-btn"
+                    >
+                      Send this and book a free look <ArrowUpRight className="h-4 w-4" />
+                    </button>
+                    <Link
+                      to="/roof-cost"
+                      className="btn-lift inline-flex items-center gap-2 border border-line-strong bg-surface px-7 py-4 font-mono text-xs font-semibold uppercase tracking-[0.2em] text-content hover:border-accent hover:text-accent"
+                    >
+                      More on roofing costs
+                    </Link>
+                  </div>
+                </div>
+              </motion.div>
+            )}
           </div>
+
+          {/* ---- step controls ----
+              Stacked on a phone, with Next full width. Side by side, the two
+              buttons sat in the bottom corners of the screen — exactly where
+              the assistant launcher and the back-to-top button float — so the
+              primary action of the whole tool was partly covered. Full width
+              means its middle is always clear. */}
+          <div className="flex flex-col-reverse gap-3 border-t border-line px-6 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-9">
+            <button
+              type="button"
+              onClick={() => setStep((s) => Math.max(0, s - 1))}
+              disabled={step === 0}
+              className="inline-flex items-center justify-center gap-2 py-2 font-mono text-xs uppercase tracking-[0.18em] text-content-muted transition-colors hover:text-content disabled:opacity-30 sm:justify-start sm:py-0"
+              data-testid="calc-back-btn"
+            >
+              <ArrowLeft className="h-4 w-4" /> Back
+            </button>
+            {step < 2 && (
+              <button
+                type="button"
+                onClick={goNext}
+                disabled={!canAdvance}
+                title={canAdvance ? undefined : "Find your roof size first"}
+                className="btn-lift inline-flex w-full items-center justify-center gap-2 bg-accent px-6 py-4 font-mono text-xs font-semibold uppercase tracking-[0.18em] text-accent-on hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-accent sm:w-auto sm:py-3"
+                data-testid="calc-next-btn"
+              >
+                Next <ArrowRight className="h-4 w-4" />
+              </button>
+            )}
           </div>
         </div>
       </div>

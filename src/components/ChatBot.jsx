@@ -70,22 +70,28 @@ let nextId = 0;
  */
 function RoofMark({ className = "" }) {
   return (
-    <svg viewBox="0 0 32 32" className={className} aria-hidden="true">
+    <svg viewBox="0 0 32 32" className={className} aria-hidden="true" fill="none">
       {/*
-        One solid silhouette, traced anticlockwise from the ridge: down the
-        right pitch to the eave, in under the overhang, down the wall, along
-        the bottom, out into the speech tail, back up, and up the left side to
-        the ridge again.
+        A speech bubble with a roof inside it.
 
-        Drawn as a filled shape rather than strokes because at 32px on a phone
-        a stroked outline turns to mush, and because the site's logo mark is
-        solid too. The eaves deliberately overhang the walls — that step is the
-        one detail that makes it read as a roof rather than a generic house
-        pin, and it is the thing the company actually sells.
+        The previous mark was a solid house silhouette with a small tail. It
+        looked like a property listing pin — people read "house", not "talk to
+        someone" — and next to a round back-to-top button it was just another
+        orange blob. Leading with the bubble shape says what the button does at
+        a glance; the roof inside says who you are talking to.
       */}
       <path
-        fill="currentColor"
-        d="M16 3 L31 15.5 L26.5 15.5 L26.5 23 L15 23 L7 30 L10 23 L5.5 23 L5.5 15.5 L1 15.5 Z"
+        d="M27 5H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h3.5v5.5L16 21h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2Z"
+        stroke="currentColor"
+        strokeWidth="2.2"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M10.5 15.5 16 10.5l5.5 5"
+        stroke="currentColor"
+        strokeWidth="2.2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
       />
     </svg>
   );
@@ -188,12 +194,12 @@ export default function ChatBot() {
         aria-expanded={open}
         aria-controls={panelId}
         aria-label={open ? "Close the roofing assistant" : "Ask a roofing question"}
-        className="btn-lift fixed bottom-5 left-5 z-40 flex h-14 items-center gap-2.5 bg-accent px-3.5 text-accent-on shadow-card hover:bg-accent-hover sm:h-14 sm:pr-5"
+        className="btn-lift fixed bottom-5 left-5 z-40 flex h-[52px] items-center gap-2.5 bg-accent px-3 text-accent-on shadow-card hover:bg-accent-hover sm:pr-4"
         data-testid="chatbot-launcher"
       >
         {open ? <X className="h-6 w-6" /> : <RoofMark className="h-7 w-7 shrink-0" />}
-        <span className="hidden font-mono text-[11px] font-semibold uppercase tracking-[0.18em] sm:block">
-          {open ? "Close" : "Ask a question"}
+        <span className="hidden font-mono text-[11px] font-semibold uppercase tracking-[0.12em] sm:block">
+          {open ? "Close" : "Ask us"}
         </span>
       </button>
 

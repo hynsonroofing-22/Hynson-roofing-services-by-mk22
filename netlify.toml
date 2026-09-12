@@ -22,6 +22,13 @@
   to = "/.netlify/functions/roof-area"
   status = 200
 
+# Aerial map tiles for the roof drawing tool. Proxied so the LINZ key stays
+# on the server — see netlify/functions/tile.js.
+[[redirects]]
+  from = "/api/tile"
+  to = "/.netlify/functions/tile"
+  status = 200
+
 # SPA fallback. Without this, refreshing /admin or /privacy-policy asks Netlify
 # for a file that does not exist and returns a 404 — the router only works if
 # every unmatched path is served index.html and resolved client-side.

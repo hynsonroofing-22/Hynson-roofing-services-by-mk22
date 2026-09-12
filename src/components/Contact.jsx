@@ -6,9 +6,16 @@ import { API_URL, REGIONS, PHONE_DISPLAY, PHONE_TEL, EMAIL } from "../data/conte
 
 const SERVICE_CHIPS = ["Roof Replacement", "New Roof", "Leaks & Repairs", "Emergency"];
 
+/**
+ * Where the roof tool parks its answers when it has to send someone to another
+ * page to reach this form. Exported so there is one spelling of the key rather
+ * than two string literals that can drift apart.
+ */
+export const PREFILL_KEY = "hynson_enquiry_prefill";
+
 const EMPTY = { name: "", email: "", phone: "", address: "", region: REGIONS[0], service: SERVICE_CHIPS[0], message: "", estimate: "" };
 
-export default function Contact({ compact = false } = {}) {
+export default function Contact({ compact = false, heading = "h2" } = {}) {
   const [form, setForm] = useState(EMPTY);
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
@@ -17,12 +24,55 @@ export default function Contact({ compact = false } = {}) {
   // so nothing anyone typed is lost.
   const [noInbox, setNoInbox] = useState(false);
 
+  /**
+   * Catches everything the roof tool collected so nobody types it twice.
+   *
+   * The address is carried across as well as the summary now — it is the one
+   * field someone has genuinely already filled in over there, and asking for
+   * it again immediately after showing them their own roof reads as though we
+   * weren't paying attention.
+   */
   useEffect(() => {
-    const onPrefill = (e) => {
-      setForm((f) => ({ ...f, service: e.detail.service || f.service, estimate: e.detail.estimate || "", message: e.detail.estimate || f.message }));
-      toast.info("Estimate attached — just add your details and send.");
+    const apply = (detail) => {
+      if (!detail) return;
+      setForm((f) => ({
+        ...f,
+        service: detail.service || f.service,
+        address: detail.address || f.address,
+        estimate: detail.estimate || "",
+        message: detail.estimate || f.message,
+      }));
+      toast.info("Your roof details are attached — just add your contact details.");
     };
+
+    const onPrefill = (e) => apply(e.detail);
     window.addEventListener("prefill-enquiry", onPrefill);
+
+    // Arriving from the roof tool on another page: it parked the details in
+    // sessionStorage because this form wasn't mounted yet. Pick them up once,
+    // then clear them so a later visit to this page isn't pre-filled with
+    // somebody's stale answers.
+    try {
+      const parked = sessionStorage.getItem(PREFILL_KEY);
+      if (parked) {
+        sessionStorage.removeItem(PREFILL_KEY);
+        apply(JSON.parse(parked));
+        // Land on the form, not the top of the page. Someone who has just
+        // filled in the roof tool has been sent here to finish — making them
+        // hunt for the thing they were sent to is the sort of small failure
+        // that loses an enquiry. Deferred so the page has laid out first.
+        setTimeout(() => {
+          const el = document.querySelector("[data-testid=contact-section]");
+          if (!el) return;
+          const y = el.getBoundingClientRect().top + window.scrollY - 90;
+          if (window.__lenis) window.__lenis.scrollTo(y);
+          else window.scrollTo({ top: y, behavior: "smooth" });
+        }, 450);
+      }
+    } catch {
+      // Unreadable or unavailable storage — nothing to restore.
+    }
+
     return () => window.removeEventListener("prefill-enquiry", onPrefill);
   }, []);
 
@@ -107,12 +157,22 @@ export default function Contact({ compact = false } = {}) {
           className="lg:col-span-2"
         >
           <p className="font-mono text-[10px] tracking-[0.3em] text-brand-ember uppercase">— Service enquiry</p>
-          <h2 className="mt-4 font-display text-[clamp(2.25rem,5vw,4rem)] font-extrabold uppercase leading-[1.0] tracking-[-0.02em] text-zinc-50">
-            Free quotes. <span className="text-brand">No obligation.</span>
-          </h2>
+          {/* An <h1> when this is the top of the contact page, an <h2> when it
+              is a section further down the homepage. One heading either way —
+              the page used to carry its own copy of this line directly above,
+              which said the same thing twice and pushed the form off screen. */}
+          {heading === "h1" ? (
+            <h1 className="mt-4 font-display text-[clamp(2.25rem,5vw,4rem)] font-extrabold uppercase leading-[1.0] tracking-[-0.02em] text-zinc-50">
+              Free quotes. <span className="text-brand">No obligation.</span>
+            </h1>
+          ) : (
+            <h2 className="mt-4 font-display text-[clamp(2.25rem,5vw,4rem)] font-extrabold uppercase leading-[1.0] tracking-[-0.02em] text-zinc-50">
+              Free quotes. <span className="text-brand">No obligation.</span>
+            </h2>
+          )}
           <p className="mt-5 max-w-md text-sm leading-relaxed text-zinc-400">
-            Tell us a bit about your roofing project and our team will get back to you with a quote or advice as
-            soon as possible. We provide free quotations and site assessments across Auckland.
+            Tell us about the roof and Eugene will come and look at it — free, and with no obligation
+            either way. Residential and commercial, right across Auckland.
           </p>
           <div className="mt-10 space-y-5">
             <a href={`tel:${PHONE_TEL}`} className="group flex items-center gap-4 text-sm text-zinc-300 transition-colors hover:text-brand" data-testid="contact-phone">
@@ -211,12 +271,12 @@ export default function Contact({ compact = false } = {}) {
                   data-testid="contact-no-inbox"
                 >
                   <p className="font-display text-sm font-bold uppercase tracking-tight text-brand-ember">
-                    This form isn't connected yet
+                    That didn't send — sorry
                   </p>
                   <p className="mt-2 text-sm leading-relaxed text-zinc-300">
-                    Nothing has been sent, and we'd rather tell you than leave you waiting. Your
-                    details are still in the form above — please ring or email instead and we'll
-                    pick it up straight away.
+                    Something went wrong at our end, and we'd rather tell you than leave you
+                    waiting on a reply that never comes. Everything you typed is still here. Give
+                    Eugene a ring or send it by email and he'll pick it up straight away.
                   </p>
                   <div className="mt-4 flex flex-wrap gap-3">
                     <a

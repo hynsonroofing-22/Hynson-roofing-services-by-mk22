@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Phone, Mail, MapPin, Clock, AlertTriangle } from "lucide-react";
+import { Phone, Mail, MapPin, Clock } from "lucide-react";
 import PageShell from "../components/PageShell";
 import { Section, SectionHead, ProcessBlock, useSettle } from "../components/PageParts";
 import Contact from "../components/Contact";
@@ -15,15 +15,14 @@ import {
 /**
  * The contact page.
  *
- * The enquiry form is the existing `Contact` component, embedded whole —
- * including the honest "this form isn't connected yet" state it grew when the
- * missing backend was found. Nothing about it is duplicated or reimplemented
- * here; this page adds the surrounding information a contact page needs and
- * the homepage section had no room for.
+ * The enquiry form opens the page — it is the thing that actually brings
+ * Hynson work, so nothing goes above it. Everything a contact page also needs
+ * (the three direct channels, the areas covered, what happens after you send
+ * it) follows underneath.
  *
- * Opening hours are NOT stated. None have been confirmed, and "Mon–Fri 7am–5pm"
- * is exactly the sort of plausible invention this project has to avoid — a
- * customer would ring at 4pm on the strength of it. The page says so out loud.
+ * Opening hours are not stated anywhere. None have been confirmed, and
+ * "Mon-Fri 7am-5pm" is exactly the plausible invention this project has to
+ * avoid — somebody would ring at 4pm on the strength of it.
  */
 
 const CHANNELS = [
@@ -55,21 +54,18 @@ export default function ContactPage() {
 
   return (
     <PageShell current="Contact">
-      <section className="border-b border-line bg-surface">
-        <div className="mx-auto max-w-page px-5 py-14 sm:px-8 sm:py-20">
-          <motion.div {...settle()} className="max-w-measure">
-            <p className="t-label text-accent">— Get in touch</p>
-            <h1 className="mt-5 t-display text-content">Free quotes. No obligation.</h1>
-            <p className="mt-6 t-body text-content-muted">
-              Tell us about the roof and Eugene will come and look at it. Residential and commercial,
-              right across Auckland.
-            </p>
-          </motion.div>
-        </div>
-      </section>
+      {/* The form IS the top of this page.
+          This page exists to be filled in — the enquiry is what actually
+          brings Hynson work, and anything that pushes the first field below
+          the fold is costing him money. The Contact component already carries
+          its own heading and the "free quotes, site inspections, Auckland-wide"
+          column beside the fields, so a separate hero above it only repeated
+          itself and shoved the form off the screen. The areas, the process and
+          the office details all follow underneath, where they belong. */}
+      <Contact compact heading="h1" />
 
       <Section tone="ground">
-        <SectionHead eyebrow="Three ways" title="How to reach Hynson" />
+        <SectionHead eyebrow="Three ways" title="Or reach Hynson directly" />
         <div className="mt-10 grid gap-px border border-line bg-line lg:grid-cols-3">
           {CHANNELS.map((c, i) => (
             <motion.a
@@ -94,19 +90,20 @@ export default function ContactPage() {
           ))}
         </div>
 
-        {/* Hours are a fact, and we don't have it. */}
+        {/* Opening hours go here once Eugene confirms them. Nothing is shown
+            in the meantime — a guessed set of hours sends someone to voicemail
+            expecting an answer. See LAUNCH-BLOCKERS.md #3d. */}
         <motion.div
           {...settle(0.05)}
-          className="mt-8 flex max-w-3xl items-start gap-3 border border-dashed border-warning/60 bg-warning/10 p-6"
-          data-testid="contact-hours-placeholder"
+          className="mt-8 flex max-w-3xl items-start gap-3 border border-line bg-surface p-6 shadow-card"
+          data-testid="contact-emergency-note"
         >
-          <Clock className="mt-0.5 h-5 w-5 shrink-0 text-warning" aria-hidden="true" />
+          <Clock className="mt-0.5 h-5 w-5 shrink-0 text-accent" aria-hidden="true" />
           <div>
-            <p className="t-h3 text-content">Opening hours not published yet</p>
+            <p className="t-h3 text-content">Roof leaking right now?</p>
             <p className="mt-3 t-small text-content-muted">
-              Hynson hasn't confirmed his hours, so none are shown. Guessing at them would send
-              somebody to voicemail expecting an answer. Ring {PHONE_DISPLAY} and you'll find out in
-              a moment what a website can't tell you.
+              Don't fill in a form — ring {PHONE_DISPLAY}. A phone call gets a roofer moving, and
+              water coming through a ceiling doesn't wait for office hours.
             </p>
           </div>
         </motion.div>
@@ -128,23 +125,11 @@ export default function ContactPage() {
             </li>
           ))}
         </motion.ul>
-        <motion.p {...settle(0.08)} className="mt-6 flex items-start gap-2.5 t-small text-content-faint">
-          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warning" aria-hidden="true" />
-          <span>
-            These are the broad areas the enquiry form offers. A confirmed suburb-by-suburb list
-            hasn't been supplied yet — see LAUNCH-BLOCKERS.
-          </span>
+        <motion.p {...settle(0.08)} className="mt-6 max-w-measure t-small text-content-faint">
+          Not sure whether you're in range? Ring and ask — it takes ten seconds and saves you
+          waiting on a reply.
         </motion.p>
       </Section>
-
-      {/* The existing enquiry form, whole. `compact` keeps its own section
-          padding out of the way, since this page supplies it. */}
-      <Section tone="ground" className="!py-0">
-        <div className="py-section-sm sm:py-section">
-          <SectionHead eyebrow="Send an enquiry" title="Tell us about the roof" />
-        </div>
-      </Section>
-      <Contact compact />
 
       <ProcessBlock />
 

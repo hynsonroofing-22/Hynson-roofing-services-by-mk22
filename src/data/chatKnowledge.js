@@ -135,7 +135,7 @@ export const KNOWLEDGE = [
     q: "Are quotes free?",
     k: "free quotes quotation quotations estimate assessment anything charge callout fee obligation cost nothing",
     a: `Yes — free quotations and free site assessments, residential and commercial. Hynson looks at the roof, talks through what you need, and gives you a clear recommendation with a written quotation for the work.`,
-    chips: ["Book a site inspection", "Try the instant estimator"],
+    chips: ["Book a site inspection", "Work out my roof size"],
   },
 
   // ---- practical -------------------------------------------------------
@@ -158,14 +158,14 @@ export const KNOWLEDGE = [
     q: "How do I get a quote?",
     k: "get quote quoted book booking arrange organise organize appointment visit someone come out look request process next step apply sign up",
     a: `Two ways. Send an enquiry through the form on this page with a bit about the roof, or ring ${PHONE_DISPLAY} directly. Either way the next step is a free site inspection, and the written quotation follows that.`,
-    chips: ["Send an enquiry", "Try the instant estimator"],
+    chips: ["Send an enquiry", "Work out my roof size"],
   },
   {
     id: "estimator",
     q: "Is there a way to get a rough idea online?",
     k: "estimator calculator instant online rough ballpark idea tool estimate myself measure square metres m2 area size how big",
-    a: `There's an instant estimator further up this page. It takes your roof area — and it can work that out from your address using public building outline data — and gives a ballpark range. It uses demo rates that Hynson hasn't confirmed yet, so treat it as a rough shape rather than a price. A real figure comes from the site inspection.`,
-    chips: ["Try the instant estimator", "Book a site inspection"],
+    a: `There's a roof size tool on the Roof Cost page. Three ways to use it: type your address, trace your roof on an aerial photo, or just describe the house. It tells you how big your roof actually is and what will move the price on a job like yours. Most roofing sites can't do that at all.`,
+    chips: ["Work out my roof size", "Book a site inspection"],
   },
   {
     id: "who",
@@ -187,8 +187,8 @@ export const KNOWLEDGE = [
     id: "price",
     q: "How much does a new roof cost?",
     k: "cost costs price pricing much expensive cheap dollars budget rate rates per square metre m2 charge afford figure ballpark deposit payment finance pay roof reroof job",
-    a: `I can't give you a price, and I'd be making it up if I did — no two roofs cost the same, and it depends on size, pitch, access, and the state of what's underneath. Hynson quotes in writing after a free site inspection. There's an instant estimator on this page for a rough shape, but it uses demo rates, not Hynson's real ones.`,
-    chips: ["Book a site inspection", "Try the instant estimator"],
+    a: `I can't give you a price without seeing the roof — and neither can anyone else honestly. Size, pitch, access, height and what's underneath the old roof all move it a long way. What I can do is point you at the roof size tool on the Roof Cost page: it measures your actual roof and tells you what'll matter on your job. Then Eugene comes out, free, and puts a real number in writing.`,
+    chips: ["Book a site inspection", "Work out my roof size"],
     guarded: true,
   },
   {

@@ -40,34 +40,41 @@ function useScrollToTop() {
  * a link to itself.
  */
 export function Breadcrumbs({ trail = [], current }) {
+  // Every item is the same kind of box, so every item sits on the same line.
+  //
+  // Before this, "Home" lived in a flex <li> with the chevron while the
+  // current page was a bare <span> in a plain <li>. Two different box types
+  // with two different line heights meant the last crumb and its arrow sat a
+  // couple of pixels lower than the first — subtle, but it read as broken.
+  // `leading-none` takes the mono font's line box out of the equation
+  // entirely, and every item now carries identical alignment classes.
+  const crumb = "inline-flex items-center leading-none t-label transition-colors";
+
   return (
     <nav aria-label="Breadcrumb" className="border-b border-line bg-surface-sunken">
-      <ol className="mx-auto flex max-w-page flex-wrap items-center gap-x-2 gap-y-1 px-5 py-3.5 sm:px-8">
-        <li className="flex items-center gap-2">
-          <Link
-            to="/"
-            className="t-label text-content-faint transition-colors hover:text-accent"
-          >
+      <ol className="mx-auto flex max-w-page flex-wrap items-center gap-x-2.5 gap-y-2 px-5 py-4 sm:px-8">
+        <li className={crumb}>
+          <Link to="/" className={`${crumb} text-content-faint hover:text-accent`}>
             Home
           </Link>
-          <ChevronRight className="h-3 w-3 shrink-0 text-content-faint" aria-hidden="true" />
         </li>
-        {trail.map((c) => (
-          <li key={c.to} className="flex items-center gap-2">
-            <Link
-              to={c.to}
-              className="t-label text-content-faint transition-colors hover:text-accent"
-            >
-              {c.label}
-            </Link>
-            <ChevronRight className="h-3 w-3 shrink-0 text-content-faint" aria-hidden="true" />
+        {[...trail, null].map((c, i) => (
+          <li key={c ? c.to : "current"} className={`${crumb} gap-2.5`}>
+            <ChevronRight
+              className="h-3 w-3 shrink-0 text-content-faint/70"
+              aria-hidden="true"
+            />
+            {c ? (
+              <Link to={c.to} className={`${crumb} text-content-faint hover:text-accent`}>
+                {c.label}
+              </Link>
+            ) : (
+              <span className={`${crumb} text-accent`} aria-current="page">
+                {current}
+              </span>
+            )}
           </li>
         ))}
-        <li>
-          <span className="t-label text-accent" aria-current="page">
-            {current}
-          </span>
-        </li>
       </ol>
     </nav>
   );

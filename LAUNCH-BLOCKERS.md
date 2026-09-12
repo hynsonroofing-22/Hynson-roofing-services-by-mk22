@@ -18,7 +18,39 @@ note the resolution when you do.
 
 ## 🔴 Blocking — must be resolved before go-live
 
-### 1. Instant Estimate pricing is entirely invented
+### 1. Pricing — figures removed, and here is exactly what to ask for
+**Resolved as far as it can be without Eugene, 2026-09-13.**
+
+Every dollar figure has been taken off the site. The estimator no longer shows
+a price, a range, or a per-m² rate anywhere, and there is no longer a warning
+explaining why — because there is nothing left to warn about. What it shows
+instead is the visitor's **actual roof size** (three ways: address lookup,
+tracing it on an aerial photo, or describing the house) and a personalised list
+of **what will move their price**, built from their own answers. All of that is
+true, none of it needed anybody's sign-off, and it is a better tool than the
+invented range ever was.
+
+**To put prices back, ask Eugene for these six things.** The estimator already
+collects every one of the inputs they would key off — see `PRICE_DRIVERS` and
+the question groups in `src/components/QuoteCalculator.jsx`:
+
+1. **A per-m² supply-and-install rate for long-run steel**, on a straightforward
+   single-storey re-roof with easy access. This is the baseline everything else
+   adjusts from.
+2. **The same for a membrane system**, since flat roofs are priced differently.
+3. **Roughly what scaffolding adds** — as a percentage, a per-m² figure, or a
+   typical amount for a two-storey house. Whichever he thinks in.
+4. **Roughly what tight or difficult access adds**, same format.
+5. **A typical figure for spouting and downpipes** on an average house, since
+   that is the most common extra.
+6. **Whether he wants a range shown at all**, and how wide. Some roofers will
+   only quote after seeing the roof, and that is a legitimate answer — in which
+   case the estimator stays exactly as it is now.
+
+Until then nothing changes and nothing is missing: the page does not look
+unfinished, because it no longer promises a number it cannot give.
+
+### 1a. Original note — Instant Estimate pricing was entirely invented
 `src/components/QuoteCalculator.jsx` — the service-type multipliers,
 per-m² material rates ($145 / $125 / $168), roof-pitch multipliers, and
 add-on prices ($2,600 gutters, $3,200 painting, $1,250 skylight) are all
@@ -160,6 +192,32 @@ Until then: no star ratings, no review counts, no invented names. Adding
 that's required once the real ones arrive — the section switches itself over to
 a real carousel (dots, arrows, keyboard support) as soon as there is more than
 one, and needs no other change.
+
+### 3e. Photos and facts that would each win work, in order of value
+**Added 2026-09-13.** Everything on this list is something a competing Auckland
+roofing site has and we do not, where the only thing missing is a fact or a
+photo from Eugene. Ordered by what would actually win him jobs. The build work
+for each is small once the material arrives.
+
+1. **Google Business Profile link + permission to quote the reviews.** Still
+   the single highest-value item anywhere in this document. See #3c.
+2. **Before-and-after photo pairs.** The most persuasive image in roofing, and
+   competitors lead with them. We have plenty of *during* and *after* shots and
+   not one *before*. A before/after slider is a couple of hours' work and is
+   deliberately **not built yet**, because a slider with nothing to show is
+   worse than no slider. Ask for one "before" for any job we already have an
+   "after" of — they will be on his phone.
+3. **Suburb for each of the eight work photos.** Unlocks proper case studies
+   ("Re-roof in Onehunga") and, after that, suburb landing pages — the largest
+   remaining SEO opportunity. See #3b.
+4. **The ten trust facts** in #4 — year started, licensing, insurance,
+   memberships, guarantee. Competitors put these in a badge row near every
+   quote button.
+5. **Confirmation on the six portfolio images** in #3a. They are currently not
+   shown anywhere on the site.
+6. **Opening hours**, and whether he takes calls at weekends. See #3d.
+7. **A photo of a roof-painting job.** The one service page with no photo of
+   that specific work.
 
 ### 3d. Gaps the new pages had to be built around
 **Added 2026-09-10**, when the site was expanded from one long homepage into

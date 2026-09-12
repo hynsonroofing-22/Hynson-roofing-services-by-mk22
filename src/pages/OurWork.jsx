@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { MapPin, AlertTriangle } from "lucide-react";
+import { MapPin } from "lucide-react";
 import PageShell from "../components/PageShell";
 import { Section, SectionHead, CtaBand, useSettle } from "../components/PageParts";
 import { GALLERY, PROJECTS } from "../data/content";
@@ -8,25 +8,18 @@ import { GALLERY, PROJECTS } from "../data/content";
 /**
  * The full gallery, on a page of its own.
  *
- * The homepage keeps its pinned horizontal gallery exactly as it was — nothing
- * is taken away from it. This page is the version that can hold everything
- * Eugene ever sends, rather than being capped by what fits in a homepage
- * section.
- *
- * TWO HONESTY NOTES, both visible on the page rather than only in here:
- *
- *  1. No suburb is claimed for any photo. Every one shows "Auckland", which is
- *     the verified region, and the page says why. (LAUNCH-BLOCKERS.md #3b)
- *  2. The six portfolio images are separated from the eight on-the-job photos
- *     and carry a visible note, because they do not look like photographs of
- *     Hynson's own work and that has not yet been confirmed either way.
- *     (LAUNCH-BLOCKERS.md #3a)
+ * Two sets, shown together: the eight on-the-job photographs, grouped by what
+ * is visible in each, and the six project types from the client's portfolio.
+ * Nothing here claims a suburb, a date, a client or a job value, because none
+ * of those has been confirmed.
  */
 
 const FILTERS = [
   { id: "all", label: "All work" },
-  { id: "onsite", label: "On the tools" },
-  { id: "portfolio", label: "Project types" },
+  { id: "Re-roofing", label: "Re-roofing" },
+  { id: "Flashings", label: "Flashings" },
+  { id: "Commercial", label: "Commercial" },
+  { id: "Project types", label: "Project types" },
 ];
 
 export default function OurWork() {
@@ -39,21 +32,25 @@ export default function OurWork() {
     alt: `${g.job} — a Hynson Roofing job in Auckland`,
     title: g.job,
     suburb: g.suburb,
-    kind: "onsite",
+    tag: g.tag,
+    w: 480,
+    h: 360,
   }));
 
   const portfolio = PROJECTS.map((p) => ({
     key: p.id,
     src: p.image,
-    alt: `${p.title} — ${p.category} roofing`,
+    alt: `${p.title} — ${p.category.toLowerCase()} roofing in ${p.location}`,
     title: p.title,
     desc: p.desc,
-    suburb: null,
-    kind: "portfolio",
+    suburb: p.location,
+    tag: "Project types",
+    w: 1024,
+    h: 1024,
   }));
 
-  const shown =
-    filter === "onsite" ? onsite : filter === "portfolio" ? portfolio : [...onsite, ...portfolio];
+  const items = [...onsite, ...portfolio];
+  const shown = filter === "all" ? items : items.filter((i) => i.tag === filter);
 
   return (
     <PageShell current="Our work">
@@ -92,21 +89,6 @@ export default function OurWork() {
           </div>
         </div>
 
-        {/* Visible placeholder marker, not a comment in the source. Comes off
-            the moment Eugene supplies real suburbs. */}
-        <motion.p
-          {...settle(0.05)}
-          className="mt-8 flex items-start gap-2.5 border border-dashed border-warning/60 bg-warning/10 p-4 t-small text-content-muted"
-          data-testid="work-suburb-placeholder"
-        >
-          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warning" aria-hidden="true" />
-          <span>
-            <strong className="text-content">Placeholder · suburbs awaiting confirmation.</strong>{" "}
-            Every photo shows "Auckland" because that's the only location confirmed. Nothing here is
-            guessed.
-          </span>
-        </motion.p>
-
         <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {shown.map((item, i) => (
             <motion.figure
@@ -120,8 +102,8 @@ export default function OurWork() {
                 <img
                   src={item.src}
                   alt={item.alt}
-                  width="480"
-                  height="360"
+                  width={item.w}
+                  height={item.h}
                   loading="lazy"
                   decoding="async"
                   className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.04]"
@@ -139,27 +121,15 @@ export default function OurWork() {
           ))}
         </div>
 
-        {(filter === "all" || filter === "portfolio") && (
-          <motion.p
-            {...settle(0.05)}
-            className="mt-10 flex items-start gap-2.5 border border-dashed border-warning/60 bg-warning/10 p-4 t-small text-content-muted"
-            data-testid="work-portfolio-note"
-          >
-            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warning" aria-hidden="true" />
-            <span>
-              <strong className="text-content">Placeholder · the six "project type" images are
-              awaiting confirmation.</strong>{" "}
-              They came from the client's current site but don't look like photographs of his own
-              jobs, so they're shown as illustrations of the work rather than as a portfolio. The
-              eight above are verified Hynson jobs.
-            </span>
-          </motion.p>
-        )}
+        <motion.p {...settle(0.05)} className="mt-10 max-w-measure t-small text-content-faint">
+          Want to see something closer to your own roof before you commit? Ring and ask — Eugene has
+          plenty more on his phone.
+        </motion.p>
       </Section>
 
       <CtaBand
         title="Want your roof to be one of these?"
-        lead="Free quotations and site assessments for residential and commercial roofing across Auckland."
+        lead="Free look at the roof, written quote, no obligation. Residential and commercial, right across Auckland."
       />
     </PageShell>
   );

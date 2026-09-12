@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { MapPin, Phone, Mail, AlertTriangle } from "lucide-react";
+import { MapPin, Phone, Mail } from "lucide-react";
 import PageShell from "../components/PageShell";
 import {
   Section,
@@ -158,25 +158,26 @@ export default function AboutPage() {
 
       <ProcessBlock />
 
-      {/* Visible, on-screen, and deliberately not hidden in a comment. */}
+      {/* Where the credentials row goes once Eugene confirms the facts behind
+          it — licensing, insurance, memberships, workmanship guarantee. Until
+          then the page says nothing about them at all rather than carrying a
+          note explaining their absence. See LAUNCH-BLOCKERS.md #4. */}
+
       <Section tone="ground">
-        <motion.div
-          {...settle()}
-          className="flex max-w-3xl items-start gap-3 border border-dashed border-warning/60 bg-warning/10 p-6"
-          data-testid="about-credentials-placeholder"
-        >
-          <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-warning" aria-hidden="true" />
-          <div>
-            <p className="t-h3 text-content">Credentials section still to come</p>
-            <p className="mt-3 t-small text-content-muted">
-              An About page would normally carry the year the company started, licensing, insurance
-              cover, industry memberships and a workmanship guarantee. None of those has been
-              confirmed yet, and this site does not publish a fact it cannot stand behind — so the
-              section is empty rather than filled in with something plausible. It goes on the moment
-              Eugene supplies the real answers.
+        <div className="grid gap-10 lg:grid-cols-[1fr_1.2fr] lg:gap-16">
+          <SectionHead eyebrow="Straight answers" title="Ask us anything" />
+          <motion.div {...settle(0.05)}>
+            <p className="t-body text-content-muted">
+              If there's something you want to know before you let anyone up on your roof —
+              how the job would run, what happens if the weather turns, who's actually doing
+              the work — ring and ask. You'll get Eugene, not a call centre.
             </p>
-          </div>
-        </motion.div>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <PrimaryLink to="/contact">Send an enquiry</PrimaryLink>
+              <CallLink />
+            </div>
+          </motion.div>
+        </div>
       </Section>
 
       <CtaBand />

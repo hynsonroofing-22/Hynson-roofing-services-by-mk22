@@ -139,11 +139,8 @@ export default function Footer() {
                 <Phone className="h-4 w-4" /> {PHONE_DISPLAY}
               </a>
               <p className="mt-2 text-xs text-zinc-500">Prompt emergency support for leaks &amp; storm damage across Auckland</p>
-              {/* Hours would go here. None have been confirmed, so rather than
-                  invent "Mon–Fri 7–5" the gap is stated. */}
-              <p className="mt-4 text-xs leading-relaxed text-zinc-600">
-                Opening hours not published yet — ring and you'll get a straight answer.
-              </p>
+              {/* Opening hours go here once they are confirmed. Nothing is
+                  shown in the meantime rather than a guess. */}
             </div>
           </div>
         </div>
