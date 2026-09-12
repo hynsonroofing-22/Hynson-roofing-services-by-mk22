@@ -1,0 +1,413 @@
+@import url(https://api.fontshare.com/v2/css?f[]=cabinet-grotesk@500,700,800,900&display=swap);
+@import url(https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap);
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ==========================================================================
+ * THE PALETTE. Every colour on this site is defined once, here.
+ *
+ * Two rules make the light and dark themes agree instead of one being an
+ * afterthought:
+ *
+ *   1. Every token has BOTH a light value and a dark value. There is no token
+ *      that only exists in one theme, so there is no component that can only
+ *      have been checked in one theme.
+ *   2. Nothing outside this block hard-codes a colour. A hex code in a
+ *      component is a colour that will be wrong in one of the two modes.
+ *
+ * The two deliberate exceptions are `text-white` and `bg-black` where they sit
+ * on a photograph or a permanently dark overlay — the photo band, the work
+ * gallery captions, the service card gradients. Those areas are dark in BOTH
+ * themes, so a themed token would resolve to a warm off-white half the time
+ * and the text would disappear. They are literal on purpose.
+ *
+ * WHY THE GROUND IS COOL
+ * ----------------------
+ * The light ground was cream (#F7F3EB). Cream and the brand orange are both
+ * warm, so they sat on top of each other: the accent had nothing to push
+ * against, read dusty rather than hot, and white cards barely separated from
+ * the page. Compared side by side at /preview/grounds against a warm stone and
+ * a near-white, the cool off-white won on two counts — the orange reads
+ * hottest against the only cool ground, and white cards sit clearly proud of
+ * it without the border having to do all the work.
+ *
+ * Values are stored as space-separated "R G B" so Tailwind can slot an opacity
+ * in via `rgb(var(--x) / <alpha-value>)` — that is what makes `bg-ground/60`
+ * work.
+ * ========================================================================== */
+
+@layer base {
+  :root {
+    /* ---- semantic surfaces ---- */
+    --ground: 243 244 246;        /* #F3F4F6  the page itself */
+    --surface: 255 255 255;       /* #FFFFFF  a raised card */
+    --surface-sunken: 233 235 239;/* #E9EBEF  inset panels, hover states */
+    --surface-hover: 223 226 231; /* #DFE2E7 */
+
+    /* ---- lines ---- */
+    --line: 223 226 231;          /* #DFE2E7  ordinary borders */
+    --line-strong: 199 204 212;   /* #C7CCD4  dividers that need to be seen */
+
+    /* ---- text ---- */
+    --text: 23 24 26;             /* #17181A  headings and body */
+    --text-muted: 92 97 105;      /* #5C6169  supporting copy */
+    --text-faint: 135 141 150;    /* #878D96  labels, metadata */
+
+    /* ---- accent ---- */
+    --accent: 194 97 15;          /* #C2610F */
+    --accent-hover: 226 118 20;   /* #E27614 */
+    --on-accent: 255 255 255;     /* text that sits on the accent */
+
+    /* ---- semantic ---- */
+    --success: 20 122 75;         /* #147A4B */
+    --warning: 154 107 0;         /* #9A6B00  amber, so it cannot be mistaken
+                                     for the orange accent */
+    --danger: 179 38 30;          /* #B3261E */
+
+    /* ------------------------------------------------------------------
+     * The ink-* and zinc-* scales, kept and remapped onto the tokens above.
+     *
+     * These are what every existing component already uses, so remapping
+     * them rather than renaming them across twenty files means the whole
+     * site adopts the new palette with no component edits and no risk of a
+     * missed one. New work uses the semantic names above.
+     *
+     * BOTH SCALES ARE INVERTED and always have been: in the light theme
+     * `zinc-50` is nearly black and `ink-950` is the page ground. That is
+     * confusing, it is documented in CLAUDE.md, and it is why anything
+     * sitting on a photo must use literal white rather than a token.
+     * ------------------------------------------------------------------ */
+    --ink-700: 199 204 212;       /* borders — used at /40 almost everywhere */
+    --ink-800: 223 226 231;
+    --ink-850: 233 235 239;       /* inset + hover */
+    --ink-900: 255 255 255;       /* cards */
+    --ink-950: 243 244 246;       /* page ground */
+
+    --zinc-50: 23 24 26;          /* strongest text */
+    --zinc-100: 36 38 42;
+    --zinc-200: 52 55 61;
+    --zinc-300: 69 73 82;
+    --zinc-400: 92 97 105;        /* muted */
+    --zinc-500: 118 124 134;
+    --zinc-600: 154 160 169;
+
+    /* ---- shadcn/radix compatibility layer ---- */
+    /* Driven from the same decisions, so a stray `bg-primary` can no longer
+       reintroduce a colour nobody chose. */
+    --background: 220 14% 96%;
+    --foreground: 220 5% 10%;
+    --card: 0 0% 100%;
+    --card-foreground: 220 5% 10%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 5% 10%;
+    --primary: 28 86% 41%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 220 13% 93%;
+    --secondary-foreground: 220 5% 10%;
+    --muted: 220 13% 93%;
+    --muted-foreground: 218 6% 39%;
+    --accent-hsl: 28 86% 41%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 3 71% 41%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 216 14% 89%;
+    --input: 216 14% 89%;
+    --ring: 28 86% 41%;
+
+    /* ---- the one radius, the one shadow, the one border ---- */
+    /* Square. Every button, card and panel on this site has hard corners, and
+       a single stray rounded one reads as a mistake. The two exceptions are
+       the round back-to-top button and the small dot markers, which are
+       deliberately circles. */
+    --radius: 0px;
+    --shadow: 0 1px 2px rgb(23 24 26 / 0.04), 0 8px 24px rgb(23 24 26 / 0.06);
+    --shadow-lifted: 0 2px 4px rgb(23 24 26 / 0.06), 0 16px 40px rgb(23 24 26 / 0.1);
+  }
+
+  .dark {
+    /* Cool dark, to agree with the cool light ground. The old dark was warm
+       and brownish, which is a different scheme rather than the other half of
+       the same one. */
+    --ground: 14 15 17;           /* #0E0F11 */
+    --surface: 23 25 28;          /* #17191C */
+    --surface-sunken: 18 20 23;   /* #121417 */
+    --surface-hover: 31 34 38;    /* #1F2226 */
+
+    --line: 42 46 52;             /* #2A2E34 */
+    --line-strong: 58 63 71;      /* #3A3F47 */
+
+    --text: 244 245 247;          /* #F4F5F7 */
+    --text-muted: 160 166 175;    /* #A0A6AF */
+    --text-faint: 118 124 134;    /* #767C86 */
+
+    /* The accent brightens in the dark. #C2610F against near-black is dim and
+       muddy; #E27614 holds its chroma and clears contrast on body text. */
+    --accent: 226 118 20;         /* #E27614 */
+    --accent-hover: 240 139 46;   /* #F08B2E */
+    --on-accent: 255 255 255;
+
+    --success: 63 191 133;        /* #3FBF85 */
+    --warning: 227 179 65;        /* #E3B341 */
+    --danger: 255 107 96;         /* #FF6B60 */
+
+    --ink-700: 58 63 71;
+    --ink-800: 31 34 38;
+    --ink-850: 18 20 23;
+    --ink-900: 23 25 28;
+    --ink-950: 14 15 17;
+
+    --zinc-50: 244 245 247;
+    --zinc-100: 228 230 234;
+    --zinc-200: 195 200 208;
+    --zinc-300: 168 174 184;
+    --zinc-400: 138 145 156;
+    --zinc-500: 110 117 127;
+    --zinc-600: 84 90 99;
+
+    --background: 220 10% 6%;
+    --foreground: 220 14% 96%;
+    --card: 220 10% 10%;
+    --card-foreground: 220 14% 96%;
+    --popover: 220 10% 10%;
+    --popover-foreground: 220 14% 96%;
+    --primary: 28 84% 48%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 220 10% 14%;
+    --secondary-foreground: 220 14% 96%;
+    --muted: 220 10% 14%;
+    --muted-foreground: 218 10% 66%;
+    --accent-hsl: 28 84% 48%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 4 100% 69%;
+    --destructive-foreground: 220 10% 6%;
+    --border: 218 11% 18%;
+    --input: 218 11% 18%;
+    --ring: 28 84% 48%;
+
+    /* Shadows have to be near-black in the dark, not the light theme's ink. */
+    --shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px rgb(0 0 0 / 0.45);
+    --shadow-lifted: 0 2px 4px rgb(0 0 0 / 0.5), 0 16px 40px rgb(0 0 0 / 0.55);
+  }
+
+  * {
+    border-color: rgb(var(--line));
+  }
+
+  html {
+    scroll-behavior: auto;
+    /* Firefox scrollbar. Themed, like everything else. */
+    scrollbar-color: rgb(var(--line-strong)) rgb(var(--surface-sunken));
+  }
+
+  body {
+    background-color: rgb(var(--ground));
+    color: rgb(var(--text));
+    transition: background-color 0.3s, color 0.3s;
+    font-family: "Plus Jakarta Sans", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+  }
+
+  ::selection {
+    background: rgb(var(--accent));
+    color: rgb(var(--on-accent));
+  }
+
+  /* One visible keyboard focus ring for the whole site. Only the Contact
+     inputs had any focus styling before this, so tabbing through the nav,
+     the service cards or the calculator gave no indication of position.
+     `:where()` keeps specificity at zero so a component can still override,
+     and `:focus-visible` means mouse users never see it. */
+  :where(a, button, [role="button"], input, select, textarea, summary, [tabindex]):focus-visible {
+    outline: 2px solid rgb(var(--accent));
+    outline-offset: 3px;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: rgb(var(--surface-sunken));
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: rgb(var(--line-strong));
+    border-radius: 8px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgb(var(--accent));
+  }
+
+  [data-debug-wrapper="true"] {
+    display: contents !important;
+  }
+
+  [data-debug-wrapper="true"] > * {
+    margin-left: inherit;
+    margin-right: inherit;
+    margin-top: inherit;
+    margin-bottom: inherit;
+    padding-left: inherit;
+    padding-right: inherit;
+    padding-top: inherit;
+    padding-bottom: inherit;
+    column-gap: inherit;
+    row-gap: inherit;
+    gap: inherit;
+    border-left-width: inherit;
+    border-right-width: inherit;
+    border-top-width: inherit;
+    border-bottom-width: inherit;
+    border-left-style: inherit;
+    border-right-style: inherit;
+    border-top-style: inherit;
+    border-bottom-style: inherit;
+    border-left-color: inherit;
+    border-right-color: inherit;
+    border-top-color: inherit;
+    border-bottom-color: inherit;
+  }
+}
+
+/* ==========================================================================
+ * THE TYPE SCALE. Five sizes, plus one label role. Nothing else.
+ *
+ * Three faces, three jobs, no overlap:
+ *   Cabinet Grotesk   headings only — always uppercase, always tight
+ *   Plus Jakarta Sans everything meant to be read as prose
+ *   JetBrains Mono    labels, eyebrows, numbers, metadata — never prose
+ *
+ * The families were already right for the brand, so they are kept. What was
+ * missing was the discipline: the same heading appeared at six different
+ * sizes in six different components. Consistency here is most of what
+ * "premium" actually is.
+ * ========================================================================== */
+
+@layer components {
+  /* 1 — page headline. One per page, no exceptions. */
+  .t-display {
+    font-family: "Cabinet Grotesk", sans-serif;
+    font-size: clamp(2.25rem, 5vw, 4rem);
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    text-transform: uppercase;
+    /* Stops a heading breaking with one orphan word on the last line. */
+    text-wrap: balance;
+  }
+
+  /* 2 — section heading. */
+  .t-h2 {
+    font-family: "Cabinet Grotesk", sans-serif;
+    font-size: clamp(1.75rem, 3.2vw, 2.5rem);
+    font-weight: 800;
+    line-height: 1.08;
+    letter-spacing: -0.015em;
+    text-transform: uppercase;
+    text-wrap: balance;
+  }
+
+  /* 3 — card and sub-section heading. */
+  .t-h3 {
+    font-family: "Cabinet Grotesk", sans-serif;
+    font-size: 1.0625rem;
+    font-weight: 700;
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+    text-transform: uppercase;
+    text-wrap: balance;
+  }
+
+  /* 4 — body copy. Capped near 65 characters, which is where a line stops
+     being comfortable to read. */
+  .t-body {
+    font-size: 1rem;
+    line-height: 1.65;
+    max-width: 65ch;
+  }
+
+  /* 5 — supporting copy. Same measure rule. */
+  .t-small {
+    font-size: 0.875rem;
+    line-height: 1.6;
+    max-width: 65ch;
+  }
+
+  /* The label role. Mono, uppercase, widely spaced — used for eyebrows,
+     metadata and numbers, never for a sentence someone has to read. */
+  .t-label {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.625rem;
+    font-weight: 600;
+    line-height: 1.4;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+  }
+
+  /* Full-width prose still gets a measure. Applied to a container so its
+     children inherit the cap without each one needing it. */
+  .measure > p,
+  .measure > ul,
+  .measure > ol {
+    max-width: 65ch;
+  }
+}
+
+@layer components {
+  .glass {
+    background: rgb(var(--surface) / 0.75);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+  }
+
+  .text-stroke {
+    -webkit-text-stroke: 1px rgb(var(--text) / 0.25);
+    color: transparent;
+  }
+
+  .warm-glow {
+    box-shadow: 0 0 24px rgb(var(--accent) / 0.28), 0 0 64px rgb(var(--accent) / 0.1);
+  }
+
+  /* One shadow, one lift, used everywhere something is interactive. */
+  .btn-lift {
+    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.3s, color 0.3s,
+      border-color 0.3s, box-shadow 0.35s ease;
+  }
+
+  .btn-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 22px rgb(var(--accent) / 0.3);
+  }
+
+  .btn-lift:active {
+    transform: translateY(0);
+  }
+
+  /* Nobody gets thrown around the page for wanting less motion. */
+  @media (prefers-reduced-motion: reduce) {
+    .btn-lift:hover,
+    .btn-lift:active {
+      transform: none;
+    }
+  }
+
+  /* The one card treatment: raised surface, one border, one shadow. */
+  .surface-card {
+    background: rgb(var(--surface));
+    border: 1px solid rgb(var(--line));
+    box-shadow: var(--shadow);
+    transition: border-color 0.25s ease, box-shadow 0.35s ease, transform 0.35s
+      cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .surface-card:hover {
+    border-color: rgb(var(--accent) / 0.55);
+    box-shadow: var(--shadow-lifted);
+  }
+}

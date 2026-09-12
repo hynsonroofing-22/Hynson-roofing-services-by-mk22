@@ -1,0 +1,48 @@
+{
+  "name": "hynson-roofing",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Hynson Roofing Services Ltd — Auckland NZ",
+  "dependencies": {
+    "@radix-ui/react-accordion": "^1.2.1",
+    "@react-three/drei": "^9.114.0",
+    "@react-three/fiber": "^8.17.9",
+    "@react-three/postprocessing": "^2.19.1",
+    "@tanstack/react-query": "^5.59.0",
+    "clsx": "^2.1.1",
+    "framer-motion": "^11.11.0",
+    "lenis": "^1.1.13",
+    "lucide-react": "^0.451.0",
+    "n8ao": "^1.10.3",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.26.2",
+    "react-scripts": "5.0.1",
+    "sonner": "^1.5.0",
+    "tailwind-merge": "^2.5.3",
+    "three": "^0.169.0"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "css": "tailwindcss -c tailwind.config.js -i src/tailwind-source.css -o src/index.css"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "devDependencies": {
+    "sharp": "^0.35.4",
+    "tailwindcss": "^3.4.19",
+    "tailwindcss-animate": "^1.0.7"
+  }
+}

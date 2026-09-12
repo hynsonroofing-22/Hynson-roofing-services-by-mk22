@@ -1,0 +1,47 @@
+# Netlify configuration for the Hynson Roofing site.
+#
+# The site is a Create React App single-page app with one serverless function.
+# Nothing here contains secrets — the LINZ key is set as an environment
+# variable in the Netlify dashboard (Site configuration → Environment
+# variables → LINZ_API_KEY) and read only by the function at runtime.
+
+[build]
+  command = "npm run build"
+  publish = "build"
+  functions = "netlify/functions"
+
+[build.environment]
+  # CRA treats warnings as errors when CI is set, which breaks Netlify builds
+  # for things that are only warnings locally.
+  CI = "false"
+  NODE_VERSION = "18"
+
+# The API function lives at a tidier path than the default.
+[[redirects]]
+  from = "/api/roof-area"
+  to = "/.netlify/functions/roof-area"
+  status = 200
+
+# SPA fallback. Without this, refreshing /admin or /privacy-policy asks Netlify
+# for a file that does not exist and returns a 404 — the router only works if
+# every unmatched path is served index.html and resolved client-side.
+# This must stay LAST: redirects are matched in order, so a catch-all placed
+# above the function route would swallow it.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Local development (`netlify dev`).
+#
+# Without this block the CLI guesses how to start the app and how long to wait.
+# On a cold start this project is slow to boot — three.js, drei and the whole
+# 3D scene — and the guess times out with "Timed out waiting for port 3000".
+# Stating it explicitly removes the guesswork.
+[dev]
+  command = "npm start"
+  framework = "#custom"
+  targetPort = 3000
+  port = 8888
+  publish = "public"
+  autoLaunch = true
