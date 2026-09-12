@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#0E0E0C" />
+    <meta name="theme-color" content="#0E0F11" />
     <!--
       Theme boot script. This MUST stay inline and MUST stay above the
       stylesheet and the app bundle.
@@ -29,9 +29,9 @@
         if (dark) root.classList.add("dark");
         // Painted before the stylesheet arrives, so there is no white flash on
         // a slow connection either.
-        root.style.backgroundColor = dark ? "#0E0E0C" : "#F7F3EB";
+        root.style.backgroundColor = dark ? "#0E0F11" : "#F3F4F6";
         var meta = document.querySelector('meta[name="theme-color"]');
-        if (meta) meta.setAttribute("content", dark ? "#0E0E0C" : "#C2610F");
+        if (meta) meta.setAttribute("content", dark ? "#0E0F11" : "#C2610F");
       })();
     </script>
     <meta name="robots" content="noindex, nofollow" />
