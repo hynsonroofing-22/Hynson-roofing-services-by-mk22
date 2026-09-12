@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0E0E0C" />
+    <!--
+      Theme boot script. This MUST stay inline and MUST stay above the
+      stylesheet and the app bundle.
+
+      The site is dark by default. If the `dark` class were added by React
+      after mount, the browser would paint one light frame first and the page
+      would visibly snap to dark — the cheapest-looking thing a site can do.
+      Running here, before anything else renders, means the very first paint is
+      already correct.
+
+      Reads the same localStorage key Navbar.jsx writes ("hynson_theme").
+      Anything other than an explicit "light" means dark.
+    -->
+    <script>
+      (function () {
+        var dark = true;
+        try {
+          dark = localStorage.getItem("hynson_theme") !== "light";
+        } catch (e) {
+          /* private browsing: fall back to the default */
+        }
+        var root = document.documentElement;
+        if (dark) root.classList.add("dark");
+        // Painted before the stylesheet arrives, so there is no white flash on
+        // a slow connection either.
+        root.style.backgroundColor = dark ? "#0E0E0C" : "#F7F3EB";
+        var meta = document.querySelector('meta[name="theme-color"]');
+        if (meta) meta.setAttribute("content", dark ? "#0E0E0C" : "#C2610F");
+      })();
+    </script>
+    <meta name="robots" content="noindex, nofollow" />
+    <link rel="icon" href="/brand/logo.png" type="image/png" />
+    <!-- Phones/tablets get the photo hero instead of the 3D scene, so this
+         image is the mobile Largest Contentful Paint. Preloaded only at the
+         widths that actually render it — desktop must not pay for it. -->
+    <link rel="preload" as="image" href="/img/hero-bg-original.webp" media="(max-width: 1023px)" />
+    <meta
+      name="description"
+      content="Hynson Roofing Services Ltd — professional roofing for residential and commercial properties across Auckland, New Zealand."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://api.fontshare.com" crossorigin />
+    <title>Hynson Roofing Services Ltd | Auckland NZ</title>
+  </head>
+  <body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="root"></div>
+  </body>
+</html>
