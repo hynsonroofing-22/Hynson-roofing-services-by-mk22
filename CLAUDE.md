@@ -119,11 +119,39 @@ It is currently a **draft being shown to the client for approval** — not live.
   transparent image again — that is what made the map a blank grey box.
 - Enquiries POST to `/api/enquiry` (`netlify/functions/enquiry.mjs`, Netlify
   Blobs store `enquiries`) via `src/lib/sendEnquiry.js`. `REACT_APP_BACKEND_URL`
-  is dead; don't reintroduce it.
+  is dead; don't reintroduce it. Enquiry IDs must not contain ":" or "." —
+  the Blobs listing skips such keys and /admin would show nothing.
+- `/admin` reads `netlify/functions/enquiries.mjs` with the `ADMIN_SECRET`
+  password. Email needs `SMTP_USER`/`SMTP_PASS` (Gmail App Password).
+- **One wording per action, everywhere:** "Get a free quote" (contact),
+  "Measure my roof" (estimator, always opens over the page via
+  `openRoofTool()` in `src/lib/roofTool.js`), "Call 020 4028 1926".
+  The nav "Roof Cost" link stays a page link.
+- **Orange only on things you press.** Labels and highlighted heading words use
+  `text-content-faint` (or `text-white/55` on photos). Orange WORDS use
+  `text-accent-ink`; orange fills carry `text-accent-on` (near-black, 5.7:1).
+- Phones get a fixed Call / Get a free quote bar (Navbar.jsx). Anything else
+  fixed to the bottom on a phone must sit above it (bottom-[76px]).
+- Never put a `/*` catch-all in `public/_redirects`: it runs before
+  netlify.toml and swallows every /api route.
 - ~~`src/components/MiniBuilding.jsx` imports `WallLevel` and `RoofShell`~~ —
   **no longer true.** MiniBuilding is now just a back-to-top button and imports
   nothing from any scene file. Nothing depends on those exports.
-- The desktop 3D hero now renders `src/components/RoofScene.jsx`, not
+- **The hero is a photo now (2026-10-15), on every device.** `Hero.jsx` shows
+  the Sky Tower crew photo (`public/img/hero-crew-*.webp`, preloaded from
+  `public/index.html`). The 3D build moved below it as `BuildStory.jsx`:
+  computers only, lazy-loaded once within ~a third of a screen, 540vh, with a
+  "Skip the build" button. `HeroMobile.jsx` is no longer imported (kept on
+  disk). The lower homepage is its own chunk (`pages/HomeRest.jsx`), so
+  `scrollToHash` retries for a few seconds when its target hasn't arrived.
+- **The opening cover lives in `public/index.html`** (inline style + script),
+  not in React, so it paints before the app downloads and its phone link works
+  before the app exists. `src/index.js` calls `__hxCover.mounted()`; the hero
+  photo's onLoad calls `__hxCover.ready()`. Lifts on ready, 1.2s after mount
+  at most, or on any tap/scroll/key. Once per session; never for reduced motion
+  or /admin. Note: Lighthouse's TBT rises with the cover because start-up work
+  now falls after first paint; that is a measurement artefact, not a slowdown.
+- The 3D build (`Hero3D.jsx`) renders `src/components/RoofScene.jsx`, not
   `BuildingScene.jsx`. BuildingScene is retired but kept on disk, unimported,
   in case the client ever wants the old house build back. Its 43KB never
   reaches the bundle while nothing imports it.

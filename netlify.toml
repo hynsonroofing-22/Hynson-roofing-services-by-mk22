@@ -22,6 +22,20 @@
   to = "/.netlify/functions/roof-area"
   status = 200
 
+# Enquiries. Routed here, like the others, rather than with the function's own
+# `config.path`: a function given its own path stops answering at
+# /.netlify/functions/enquiry, and that address is the fallback the site uses.
+[[redirects]]
+  from = "/api/enquiry"
+  to = "/.netlify/functions/enquiry"
+  status = 200
+
+# The admin page's list of enquiries (password protected inside the function).
+[[redirects]]
+  from = "/api/enquiries"
+  to = "/.netlify/functions/enquiries"
+  status = 200
+
 # Aerial map tiles for the roof drawing tool. Proxied so the LINZ key stays
 # on the server — see netlify/functions/tile.js.
 [[redirects]]
@@ -29,7 +43,12 @@
   to = "/.netlify/functions/tile"
   status = 200
 
-# SPA fallback. Without this, refreshing /admin or /privacy-policy asks Netlify
+# SPA fallback. This is the ONLY catch-all. There used to be a second one in
+# public/_redirects, and Netlify applies that file BEFORE these rules, so it
+# swallowed every /api/ route above and sent the homepage back instead. It has
+# been deleted; do not recreate it.
+#
+# Without this, refreshing /admin or /privacy-policy asks Netlify
 # for a file that does not exist and returns a 404 — the router only works if
 # every unmatched path is served index.html and resolved client-side.
 # This must stay LAST: redirects are matched in order, so a catch-all placed

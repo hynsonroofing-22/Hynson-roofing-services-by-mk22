@@ -2,6 +2,117 @@
 
 ---
 
+## UPDATE — 2026-10-15 (build brief item 32)
+
+Re-read solutionroofing.co.nz page by page in a real browser, re-read Eugene's
+own live Wix site, and checked the wider field (sources at the end).
+
+### The headline change: Solution Roofing caught up on the estimator
+
+The 2026-09-13 note below says their estimator "is a contact form with a
+progress bar". **That is no longer true.** /estimate is now a six-step tool:
+"AI pulls your roof from satellite imagery — you confirm the details. Real
+ballpark price, on screen, in under 90 seconds", with a live "Your details so
+far" panel beside it (address, roof size, shape, pitch, existing roof). They
+also run a colour visualiser on a subdomain.
+
+So "ours genuinely measures a roof, theirs doesn't" can no longer be the lead
+claim. What is still true and still ours:
+
+- **You can trace your own roof.** Theirs is AI-only; if it picks the wrong
+  building you can't fix it. Ours lets you correct it, and the number becomes
+  yours.
+- **Three ways in**, including "I already know" and "describe my house".
+- **It shows its working** (footprint, pitch allowance) and says plainly it's
+  an estimate.
+
+What is now theirs and not ours: **a dollar range**. That gap only closes when
+Eugene supplies rates (LAUNCH-BLOCKERS #1). It moves up his question list.
+
+### a. On Eugene's current site, missing from ours
+
+| On his site | On ours | Action |
+|---|---|---|
+| 8 Google reviews (Steve Crowe, Anne Ormrod, Win L, Janine Hall, Vanessa, Paul Spackman, Cristalyn Angel Mariano, Nolan) | Nolan only | Bring across word for word, link to the Google profile (stage 7, could come forward) |
+| "EST. 2023" | Nothing | Usable: he publishes it himself. Confirm, then a quiet "Since 2023" in the trust strip |
+| 9-phase Client Journey (inquiry → qualification → assessment booking → inspection → findings → quote → proposal review → acceptance → initial payment) | A generic 4-step timeline | Rebuild ours from his real steps, simplified to 4–5 a homeowner cares about |
+| Hero enquiry form (name, phone, email, service) | Buttons only | See b.2 |
+| "Ongoing roof maintenance" listed as a service | Folded into repairs | Add the wording |
+| "Complete our assessment form" (longer property questionnaire) | Our estimator covers this | No action |
+| Book online (Wix Bookings) | Not replicated | Still LAUNCH-BLOCKERS #5 |
+
+### b. Where Solution Roofing is better than us, honestly
+
+1. **Trust in the first screen.** A thin strip under the header: EST. 2014 ·
+   ★ 4.9 · 120+ reviews · Ranked #1. Ours has nothing above the fold. We can
+   honestly show "Since 2023" and "Read our Google reviews" (link, no
+   number until confirmed).
+2. **A short quote form in the hero.** Name, address, mobile, email and three
+   job chips, beside the headline. Our hero offers buttons that lead
+   elsewhere. For the re-roof researcher, a form in view converts better.
+   For the leak visitor, the call button must still come first.
+3. **Review cards that look like Google.** Avatar initial, name, "3 months
+   ago", the text, a "Google" source. Instantly credible. Ours is one large
+   quote.
+4. **Real drone photography.** A cross-fading hero of aerial roofs, and an
+   edge-to-edge project row. Our best photos are 480×360 (LAUNCH-BLOCKERS 3b).
+   This is the biggest visual gap and it is a photo problem, not a code one.
+5. **Projects labelled by street and suburb** ("Richmond Road, Grey Lynn").
+   Needs Eugene.
+6. **"Your details so far" panel in the estimator.** Cheap to copy and
+   genuinely helpful. Build it.
+7. **A closing call to action that states the promise**: "Get an itemised
+   quote at your address… We aim to respond within three business hours." The
+   response time needs Eugene.
+8. **Navigation**: Services / Your Project / Company / Locations / Blog, each a
+   dropdown. Clearer than ours (stage 7, item 36).
+
+### c. Things either has that we don't, ranked by jobs won
+
+Build now (no invented facts):
+1. Google reviews section + link to the profile + "Leave us a review".
+2. Phone bottom bar (Call / Get a quote), replacing the floating buttons that
+   cover content on phones (stage 3).
+3. Enquiry email + admin, so a lead is never missed (stage 3).
+4. Short hero form for re-roofers, call-first for leaks.
+5. Process timeline from Eugene's real Client Journey.
+6. "What to do right now if your roof is leaking" — a plain-language
+   emergency guide (bucket, power off at the light fitting, photograph it,
+   ring). General safety advice, no claims. Serves the leak visitor directly
+   and ranks for urgent searches.
+7. Running summary panel in the estimator.
+8. Trust strip: "Since 2023 · Auckland · Free quotes · Read our Google reviews".
+
+Needs Eugene (LAUNCH-BLOCKERS):
+9. Per-m² rates so the estimator can show a range (now matters competitively).
+10. Response-time promise.
+11. Suburb + street for each job; before/after pairs; better-resolution photos.
+12. Credentials, insurance, warranty (their whole badge row).
+13. Locations/suburb pages.
+
+Not recommended: a #1 ranking claim, a "cheap approach vs our approach" table
+(their claims, not ours), an AI colour visualiser (paid per use).
+
+### One thing to change on ours now
+
+Our services heading reads **"Specialists, not generalists"** — the exact
+phrase Solution Roofing uses on their homepage. Copying a competitor's
+tagline looks derivative to anyone who has seen both, and Eugene's client
+saw both. Reword it (stage 7, item 34).
+
+### Sources
+- https://solutionroofing.co.nz/ and /estimate, read 2026-10-15
+- https://www.hynsonroofingservices.co.nz/, read 2026-10-15
+- https://ueni.com/blog/roofing-websites/ ,
+  https://www.krishaweb.com/blog/best-roofing-website-design-inspirations/ —
+  common patterns: real job photo + quote button in the first screen,
+  reviews/licence/warranty near every CTA, emergency messaging up front
+- https://builderscrack.co.nz/trades/roofers/auckland — Auckland roofers
+  (MTL, SKI, Rampage) compete on ratings shown on a listing; Hynson has no
+  listing there (costs per lead; ask before suggesting)
+
+---
+
 ## UPDATE — 2026-09-13
 
 Re-checked against solutionroofing.co.nz and the wider field. **Six of the

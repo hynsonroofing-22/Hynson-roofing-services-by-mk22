@@ -38,6 +38,14 @@ by the client himself, which makes it usable, but confirm with him anyway:
 - **New services wording**: "Flashings" and "Ongoing roof maintenance" listed
   separately (13 entries).
 
+### Hero photo — confirm it's Hynson's crew (2026-10-15)
+The homepage hero is now `public/img/hero-crew-*.webp`: two roofers in hi-vis
+laying long-run iron with the Sky Tower behind them. It is the full-size
+original (3000×2250) of a photo on Eugene's own Wix homepage, so its
+provenance is his site. **Ask Eugene:** is this his crew and his job, and is
+he happy for it to be the first thing people see? If not, it is a one-file
+swap (`src/components/Hero.jsx` + the preload in `public/index.html`).
+
 ## 🔴 Blocking — must be resolved before go-live
 
 ### 1. Pricing — figures removed, and here is exactly what to ask for
@@ -84,15 +92,30 @@ confirm real rates for all four groups, or explicit sign-off to launch
 with these as illustrative-only (with clearer on-page wording than the
 current "Ballpark only" line if so).
 
-### 2a. Enquiries are now STORED, not yet EMAILED (2026-10-14, build stage 1)
-`netlify/functions/enquiry.mjs` receives every enquiry (roof size tool and
-contact form) and saves it to Netlify Blobs before anything else. Tested
-locally end to end: the estimator's send works from the pop-up and the
-`/roof-cost` page, and the contact page form shows its confirmation.
-**Still needed (build stage 3):** the email to info@hynsonroofingservices.co.nz,
-and `/admin` reading from the new store. Until then enquiries can only be
-seen in the Netlify dashboard (Blobs → enquiries). Do not go live before
-stage 3.
+### 2a. Enquiries: built and tested — needs three settings in Netlify (2026-10-15)
+Build stage 3 is done. `netlify/functions/enquiry.mjs` saves every enquiry to
+Netlify Blobs first, then emails info@ with any photos attached;
+`enquiries.mjs` feeds `/admin` behind a password. Tested locally end to end:
+two-step form, photos, address suggestions, the roof tool's send, admin list,
+status, delete. If the email fails the enquiry is still saved and the visitor
+is told to ring.
+
+**Set these in Netlify → Site configuration → Environment variables, then
+redeploy** (all free):
+- `SMTP_USER` — the Gmail address that sends (the project Gmail).
+- `SMTP_PASS` — a Google **App Password** for that account (Google account →
+  Security → 2-Step Verification → App passwords). Not the normal password.
+- `ADMIN_SECRET` — a long password for /admin. Give it to Eugene directly.
+Optional: `ENQUIRY_TO` if enquiries should go somewhere other than
+info@hynsonroofingservices.co.nz.
+**Then test on the live site:** send one enquiry, confirm the email arrives
+at info@, confirm it shows in /admin. Not done until that passes.
+
+### 2c. No response-time promise yet
+The confirmation says "we ring you to talk it through" and nothing about how
+fast. Solution Roofing promises "within three business hours" and it is a
+strong line. **Ask Eugene** what he will reliably hit (e.g. "same working
+day"), then add it to the confirmation, the contact page and the closing CTA.
 
 ### 2b. Aerial photos on the map tool need a free LINZ Basemaps key
 The "draw it on a map" tool was a blank grey box because it sent the LINZ

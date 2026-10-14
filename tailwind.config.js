@@ -71,7 +71,13 @@ module.exports = {
           DEFAULT: v("--accent"),
           hover: v("--accent-hover"),
           on: v("--on-accent"),
+          /* Orange WORDS. The fill orange fails as text on a light page, so
+             anything orange you read (links, the odd highlighted word) uses
+             this deeper value, which passes in both themes. */
+          ink: v("--accent-text"),
         },
+        /* Form-box edges: dark enough to find (3:1), unlike --line. */
+        field: v("--field"),
         success: v("--success"),
         warning: v("--warning"),
         danger: v("--danger"),
@@ -174,6 +180,10 @@ module.exports = {
         /* The strip's dot markers, growing and shrinking as they travel.
            Transform and opacity only — both composited, neither triggers
            layout or paint, so a dozen of them running at once costs nothing. */
+        "bounce-soft": {
+          "0%, 100%": { transform: "translateY(0)" },
+          "50%": { transform: "translateY(6px)" },
+        },
         "dot-pulse": {
           "0%, 100%": { transform: "scale(0.55)", opacity: "0.45" },
           "50%": { transform: "scale(1.6)", opacity: "1" },
@@ -190,6 +200,7 @@ module.exports = {
       animation: {
         marquee: "marquee 42s linear infinite",
         "dot-pulse": "dot-pulse 3.8s ease-in-out infinite",
+        "bounce-soft": "bounce-soft 1.8s ease-in-out infinite",
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
       },
