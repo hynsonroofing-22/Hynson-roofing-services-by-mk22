@@ -16,6 +16,28 @@ note the resolution when you do.
 
 ---
 
+## 🆕 Found on Eugene's live Wix site, 2026-10-15 (read in a real browser)
+
+His own site has been updated since our last check. Each item is now published
+by the client himself, which makes it usable, but confirm with him anyway:
+
+- **"EST. 2023"** in the hero. First time a start year has appeared anywhere.
+- **A Google Business Profile exists.** Place ID `ChIJmfh_jYKEWGURTxKA82Tb2rs`.
+  Profile link: https://www.google.com/maps/place/?q=place_id:ChIJmfh_jYKEWGURTxKA82Tb2rs
+  This answers item 3c's main question.
+- **8 Google reviews shown** (the widget header says "7 Google Reviews"; the
+  difference is unexplained, so quote neither number): Paul Spackman, Steve
+  Crowe, Nolan, Anne Ormrod, Janine Hall, Win L, Vanessa, Cristalyn Angel
+  Mariano, dated Jan to Sep 2026. Copy word for word in build stage 7 (item 33).
+  A "(5)" appears next to EST. 2023 but it is not clearly labelled as a rating;
+  do not show a star rating until it is.
+- **A 9-phase "Client Journey"**: inquiry, initial qualification, site
+  assessment booking, inspection, findings summary, quotation, proposal review,
+  acceptance, initial payment. Real process content for the "what happens when
+  you call" timeline (stage 7).
+- **New services wording**: "Flashings" and "Ongoing roof maintenance" listed
+  separately (13 entries).
+
 ## 🔴 Blocking — must be resolved before go-live
 
 ### 1. Pricing — figures removed, and here is exactly what to ask for
@@ -61,6 +83,26 @@ ships wrong before it ships at all. **Needs:** Eugene to review and
 confirm real rates for all four groups, or explicit sign-off to launch
 with these as illustrative-only (with clearer on-page wording than the
 current "Ballpark only" line if so).
+
+### 2a. Enquiries are now STORED, not yet EMAILED (2026-10-14, build stage 1)
+`netlify/functions/enquiry.mjs` receives every enquiry (roof size tool and
+contact form) and saves it to Netlify Blobs before anything else. Tested
+locally end to end: the estimator's send works from the pop-up and the
+`/roof-cost` page, and the contact page form shows its confirmation.
+**Still needed (build stage 3):** the email to info@hynsonroofingservices.co.nz,
+and `/admin` reading from the new store. Until then enquiries can only be
+seen in the Netlify dashboard (Blobs → enquiries). Do not go live before
+stage 3.
+
+### 2b. Aerial photos on the map tool need a free LINZ Basemaps key
+The "draw it on a map" tool was a blank grey box because it sent the LINZ
+*Data Service* key to LINZ *Basemaps*, which rejects it. It now uses the
+OpenStreetMap street map (house outlines are drawn on it at close zoom, and
+tracing on it was tested on five Auckland addresses). Aerial photos switch on
+automatically once `LINZ_BASEMAPS_KEY` is set in Netlify.
+**Needs:** email basemaps@linz.govt.nz from the project Gmail asking for a
+developer API key (free, does not expire), then add it in Netlify →
+Site configuration → Environment variables as `LINZ_BASEMAPS_KEY`.
 
 ### 2. Contact form does not reach a real inbox
 **Updated 2026-09-09 — it was worse than this entry said, and is now honest
@@ -145,6 +187,14 @@ the rest of the page. It is also a claim about work that may not have been done.
 Until that is answered, nothing on the page claims these are Hynson's own work
 beyond the section heading — but the section heading is the problem, so this
 cannot simply be left.
+
+### 3a-correction. Those six photos ARE on the homepage (found 2026-10-15)
+Item 3e.5 below says the six portfolio images "are currently not shown
+anywhere on the site". That is wrong: `Projects.jsx` renders them on the
+homepage as "Work we're proud of", with Residential / Commercial filters. Four
+of the six are asphalt shingle roofs. The question for Eugene in #3a is now
+urgent rather than housekeeping. To be resolved in build stage 7 (photo audit);
+nothing has been removed meanwhile, per the keep-everything rule.
 
 ### 3b. "Our recent work" gallery — suburbs unconfirmed, photos are low-res
 `src/data/content.js` → `GALLERY` drives the new pinned horizontal gallery

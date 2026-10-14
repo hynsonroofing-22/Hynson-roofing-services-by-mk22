@@ -9,7 +9,44 @@ const v = (name) => `rgb(var(${name}) / <alpha-value>)`;
 module.exports = {
   content: ["./src/**/*.{js,jsx}", "./public/index.html"],
   theme: {
+    /* ======================================================================
+     * THE TYPE SCALE — five sizes, and these are the ONLY sizes that exist.
+     *
+     * Tailwind's default size names are replaced, not extended, so every
+     * `text-xs` / `text-sm` / `text-lg` already in the components lands on
+     * one of the five steps below, and a size outside the scale cannot be
+     * written by accident. The names no longer mean their Tailwind defaults:
+     *
+     *   label    text-xs                      14px   eyebrows, metadata, chips
+     *   body     text-sm, text-base           17-18px everything meant to be read
+     *   h3       text-lg, text-xl, text-2xl   22-26px card and sub-section titles
+     *   h2       text-3xl, text-4xl           32-48px section headings
+     *   display  text-5xl … text-7xl          40-80px one per page
+     *
+     * Many of this site's visitors are older homeowners. Body text is 18px on
+     * a desktop and never below 17px on a phone, and nothing anyone has to read
+     * is smaller than 14px. See BUILD-BRIEF.md item 5.
+     * ====================================================================== */
+    fontSize: {
+      xs: ["0.875rem", { lineHeight: "1.4" }],
+      sm: ["clamp(1.0625rem, 0.3vw + 1rem, 1.125rem)", { lineHeight: "1.6" }],
+      base: ["clamp(1.0625rem, 0.3vw + 1rem, 1.125rem)", { lineHeight: "1.6" }],
+      lg: ["clamp(1.375rem, 0.8vw + 1.1rem, 1.625rem)", { lineHeight: "1.25" }],
+      xl: ["clamp(1.375rem, 0.8vw + 1.1rem, 1.625rem)", { lineHeight: "1.25" }],
+      "2xl": ["clamp(1.375rem, 0.8vw + 1.1rem, 1.625rem)", { lineHeight: "1.25" }],
+      "3xl": ["clamp(2rem, 3.6vw, 3rem)", { lineHeight: "1.05" }],
+      "4xl": ["clamp(2rem, 3.6vw, 3rem)", { lineHeight: "1.05" }],
+      "5xl": ["clamp(2.5rem, 6vw, 5rem)", { lineHeight: "1" }],
+      "6xl": ["clamp(2.5rem, 6vw, 5rem)", { lineHeight: "1" }],
+      "7xl": ["clamp(2.5rem, 6vw, 5rem)", { lineHeight: "1" }],
+    },
     extend: {
+      letterSpacing: {
+        /* The one tracking for uppercase mono labels. It was anywhere from
+           0.12em to 0.3em; at 14px anything past ~0.12em pulls the letters
+           apart into something that reads as a pattern, not a word. */
+        label: "0.1em",
+      },
       colors: {
         /* The semantic palette. Everything new should use these names —
            `bg-ground`, `bg-surface`, `border-line`, `text-ink-muted` — because

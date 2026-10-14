@@ -4,6 +4,7 @@
   "private": true,
   "description": "Hynson Roofing Services Ltd — Auckland NZ",
   "dependencies": {
+    "@netlify/blobs": "^8.2.0",
     "@radix-ui/react-accordion": "^1.2.1",
     "@react-three/drei": "^9.114.0",
     "@react-three/fiber": "^8.17.9",

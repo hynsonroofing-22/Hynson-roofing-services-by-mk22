@@ -1,0 +1,14 @@
+node_modules/
+build/
+.DS_Store
+npm-debug.log*
+
+# --- Secrets. Never commit these. ---
+.env
+.env.*
+!.env.example
+CREDENTIALS.md
+*.credentials.md
+
+# Local Netlify folder
+.netlify

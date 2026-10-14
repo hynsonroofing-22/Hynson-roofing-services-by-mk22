@@ -28,7 +28,13 @@ It is currently a **draft being shown to the client for approval** — not live.
 - **Accent colour is ORANGE** — `#C2610F` primary, `#E27614` bright.
   The site used to be green; the green is gone and must not come back.
   Backups exist as `index.css.GREEN-BACKUP` / `tailwind.config.js.GREEN-BACKUP`.
-- Warm off-white grounds, never pure white. One or two dark sections for rhythm.
+- Cool off-white grounds (the orange is the only warm thing), white cards. One or
+  two dark sections for rhythm. Light mode is the default; dark only when chosen.
+- **Type scale is five sizes, defined once in `tailwind.config.js` `fontSize`.**
+  Tailwind's names are remapped: `text-xs` = 14px label, `text-sm`/`text-base` =
+  17–18px body, `text-lg`–`2xl` = h3, `3xl`/`4xl` = h2, `5xl`+ = display. Never
+  write a px font size. `text-xs` is for mono uppercase labels only; prose is
+  `text-sm` or larger. Every button/select is at least 44px tall (base layer).
 - Reference the client chose: **solutionroofing.co.nz** — for its polish,
   clean layout and trust density. NOT its blue.
 - Cabinet Grotesk for display, Plus Jakarta Sans for body.
@@ -106,6 +112,14 @@ It is currently a **draft being shown to the client for approval** — not live.
 - The typed address is personal data: POST only (never a URL), used once, never
   logged or stored unless the quote form is actually submitted.
 - Full detail in `FEATURES-BRIEF.md` § "Address → roof area".
+- **Two different LINZ keys.** `LINZ_API_KEY` is a Data Service key (outlines,
+  addresses). Aerial map tiles come from LINZ *Basemaps*, which rejects that key;
+  `tile.js` reads `LINZ_BASEMAPS_KEY` instead and the map falls back to
+  OpenStreetMap tiles when it is missing. Never hide a tile failure behind a
+  transparent image again — that is what made the map a blank grey box.
+- Enquiries POST to `/api/enquiry` (`netlify/functions/enquiry.mjs`, Netlify
+  Blobs store `enquiries`) via `src/lib/sendEnquiry.js`. `REACT_APP_BACKEND_URL`
+  is dead; don't reintroduce it.
 - ~~`src/components/MiniBuilding.jsx` imports `WallLevel` and `RoofShell`~~ —
   **no longer true.** MiniBuilding is now just a back-to-top button and imports
   nothing from any scene file. Nothing depends on those exports.
